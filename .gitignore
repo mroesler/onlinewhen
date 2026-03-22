@@ -5,8 +5,8 @@
 *.zip
 *.tar.gz
 
-# Local build script — contains machine-specific paths
-release.ps1
+# Deployment folder — machine-specific scripts and transient release notes
+Deployment/
 
 # WoW compiled Lua bytecode
 *.luac
