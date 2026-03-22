@@ -1,0 +1,31 @@
+# Claude Code — local IDE state, memory, and settings
+.claude/
+
+# Release packages — built artifacts, not source
+*.zip
+*.tar.gz
+
+# WoW compiled Lua bytecode
+*.luac
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Editor — VSCode workspace settings (keep extensions.json / launch.json if shared)
+.vscode/settings.json
+.vscode/tasks.json
+
+# Editor — JetBrains / IntelliJ
+.idea/
+
+# Editor — Sublime Text
+*.sublime-workspace
