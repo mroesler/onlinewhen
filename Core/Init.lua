@@ -12,6 +12,7 @@ OnlineWhen = OW
 local eventFrame = CreateFrame("Frame", "OnlineWhenEventFrame")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:RegisterEvent("CHAT_MSG_ADDON")
+eventFrame:RegisterEvent("CHANNEL_UI_UPDATE")
 eventFrame:RegisterEvent("PLAYER_LOGOUT")
 
 eventFrame:SetScript("OnEvent", function(self, event, ...)
@@ -19,6 +20,8 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         OW.OnLogin()
     elseif event == "CHAT_MSG_ADDON" then
         if OW.Protocol and OW.Protocol.OnMessage then OW.Protocol.OnMessage(...) end
+    elseif event == "CHANNEL_UI_UPDATE" then
+        if OW.Protocol then OW.Protocol.OnChannelUpdate() end
     elseif event == "PLAYER_LOGOUT" then
         OW.OnLogout()
     end

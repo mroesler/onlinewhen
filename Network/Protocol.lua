@@ -54,10 +54,24 @@ function P.JoinSyncChannel()
     -- Channel number may not be available immediately; we'll re-fetch before sending
 end
 
+-- GetChannelName(index) returns the name — iterate to find our channel's number.
 local function refreshChannelNum()
-    local n = GetChannelName(channelName)
-    channelNum = n or 0
-    return channelNum
+    if channelName == "" then channelNum = 0; return 0 end
+    local lower = channelName:lower()
+    for i = 1, 64 do
+        local name = GetChannelName(i)
+        if name and name:lower() == lower then
+            channelNum = i
+            return i
+        end
+    end
+    channelNum = 0
+    return 0
+end
+
+-- Called from Init when CHANNEL_UI_UPDATE fires (channels renumber on join/leave).
+function P.OnChannelUpdate()
+    refreshChannelNum()
 end
 
 -- ---------------------------------------------------------------------------
