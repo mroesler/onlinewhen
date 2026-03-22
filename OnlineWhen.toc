@@ -2,7 +2,7 @@
 ## Title: OnlineWhen
 ## Notes: See and share when you'll be online next
 ## Author: Speedlemon@Thunderstrike
-## Version: 1.0.0
+## Version: 1.0.1
 ## SavedVariables: OnlineWhenDB
 
 Locales/enUS.lua
