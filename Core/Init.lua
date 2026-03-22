@@ -21,8 +21,7 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" then
         OW.OnLogin()
     elseif event == "PLAYER_ENTERING_WORLD" then
-        local isInitialLogin = ...
-        if isInitialLogin and OW.Protocol then OW.Protocol.JoinSyncChannel() end
+        if OW.Protocol then OW.Protocol.JoinSyncChannel() end
     elseif event == "CHAT_MSG_ADDON" then
         if OW.Protocol and OW.Protocol.OnMessage then OW.Protocol.OnMessage(...) end
     elseif event == "CHAT_MSG_CHANNEL_NOTICE" then
