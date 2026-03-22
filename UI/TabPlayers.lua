@@ -317,7 +317,7 @@ function TL.Build(parent)
         if OW.Protocol then OW.Protocol.RequestPeers() end
         refreshBtn:SetText(L.BTN_REQUESTING or "Syncing...")
         C_Timer.After(3, function()
-            if refreshBtn then refreshBtn:SetText(L.BTN_REFRESH or "Sync") end
+            if refreshBtn then refreshBtn:SetText(L.BTN_REFRESH or "Sync")  end
             OW.PurgeExpiredPeers()
             TL.Refresh()
         end)

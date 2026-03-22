@@ -6,7 +6,7 @@ OW.Protocol = {}
 local P = OW.Protocol
 
 local ADDON_PREFIX   = "OnlineWhen"
-local CHANNEL_PREFIX = "OW_"  -- realm appended at runtime: "OW_Mankrik"
+local CHANNEL_PREFIX = "ow"  -- realm name appended at runtime, e.g. "owthunderstrike"
 local MSG_VERSION    = "1"
 local VALID_ROLES    = { Tank = true, Heal = true, DPS = true }
 -- Sanity bounds for timestamps: 30 days in the past, 60 days in the future
@@ -26,7 +26,6 @@ local function sendAddonMsg(prefix, msg, distrib, target)
 end
 
 -- Register the addon message prefix so WoW routes messages to our handler.
--- TBC Anniversary uses a modernised client where the global may live under C_ChatInfo.
 if C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix then
     C_ChatInfo.RegisterAddonMessagePrefix(ADDON_PREFIX)
 elseif RegisterAddonMessagePrefix then
@@ -45,28 +44,50 @@ function P.GetChannelNum()
     return channelNum
 end
 
-function P.JoinSyncChannel()
-    local realm = (OnlineWhenDB and OnlineWhenDB.settings.realm) or GetRealmName()
-    -- Sanitize realm name: remove spaces and hyphens to keep channel name simple
-    local safeRealm = realm:gsub("[ %-]", "")
-    channelName = CHANNEL_PREFIX .. safeRealm
-    JoinChannelByName(channelName)
-    -- Channel number may not be available immediately; we'll re-fetch before sending
-end
-
--- GetChannelName(index) returns the name — iterate to find our channel's number.
 local function refreshChannelNum()
     if channelName == "" then channelNum = 0; return 0 end
-    local lower = channelName:lower()
-    for i = 1, 64 do
-        local name = GetChannelName(i)
-        if name and name:lower() == lower then
-            channelNum = i
-            return i
+    local n = GetChannelName(channelName)
+    channelNum = (n and n > 0) and n or 0
+    return channelNum
+end
+
+-- JoinChannelByName is hardware-event restricted in TBC Classic Anniversary —
+-- it silently does nothing when called from timers or event handlers.
+-- Mirror AutoLayer's proven approach: hook WorldFrame OnMouseDown so the call
+-- happens inside a real hardware event on the player's first click.
+local channelJoinHooked = false
+
+function P.JoinSyncChannel()
+    local realm     = (OnlineWhenDB and OnlineWhenDB.settings.realm) or GetRealmName()
+    local safeRealm = realm:gsub("[ %-]", ""):lower()
+    channelName     = CHANNEL_PREFIX .. safeRealm
+
+    if not channelJoinHooked then
+        channelJoinHooked = true
+        WorldFrame:HookScript("OnMouseDown", function()
+            if channelNum == 0 then
+                JoinChannelByName(channelName)
+                refreshChannelNum()
+            end
+        end)
+    end
+end
+
+-- CHAT_MSG_CHANNEL_NOTICE fires when we successfully join a channel and
+-- passes the assigned slot number directly — no polling needed.
+-- On first join, immediately broadcast self and request peers so sync
+-- happens automatically without needing to click the Sync button.
+function P.OnChannelNotice(noticeType, _, _, _, _, _, _, num, noticedName)
+    if (noticeType == "YOU_JOINED_CHANNEL" or noticeType == "YOU_CHANGED")
+    and noticedName and channelName ~= ""
+    and noticedName:lower() == channelName:lower() then
+        local firstJoin = (channelNum == 0)
+        channelNum = num
+        if firstJoin then
+            P.BroadcastSelf()
+            C_Timer.After(1, P.RequestPeers)
         end
     end
-    channelNum = 0
-    return 0
 end
 
 -- Called from Init when CHANNEL_UI_UPDATE fires (channels renumber on join/leave).
@@ -101,7 +122,6 @@ function P.SerializeREQ(name, realm)
     return table.concat({ MSG_VERSION, "REQ", name or "", realm or "" }, SEP)
 end
 
--- Split a string by a separator character (single char only).
 local function split(str, sep)
     local parts = {}
     for part in str:gmatch("([^" .. sep .. "]+)") do
@@ -111,8 +131,7 @@ local function split(str, sep)
 end
 
 function P.Deserialize(message)
-    local fields = split(message, SEP)
-    return fields
+    return split(message, SEP)
 end
 
 -- ---------------------------------------------------------------------------
@@ -127,7 +146,7 @@ local function validateANN(fields)
     if fields[2] ~= "ANN" then return false, "type" end
     if not VALID_ROLES[fields[5]] then return false, "role" end
 
-    local level    = tonumber(fields[6])
+    local level = tonumber(fields[6])
     if not level or level < 1 or level > 70 then return false, "level out of range" end
 
     local onlineAt = tonumber(fields[7])
@@ -151,16 +170,12 @@ end
 
 function P.BroadcastSelf()
     local myEntry = OnlineWhen.GetMyEntry()
-    if not myEntry then return end  -- nothing to broadcast yet
+    if not myEntry then return end
 
     refreshChannelNum()
-    if channelNum == 0 then return end  -- not in channel yet
+    if channelNum == 0 then return end
 
     local msg = P.SerializeANN(myEntry)
-    if #msg > 255 then
-        -- Shouldn't happen with our format, but guard anyway
-        return
-    end
     sendAddonMsg(ADDON_PREFIX, msg, "CHANNEL", channelNum)
 end
 
@@ -182,8 +197,7 @@ function P.OnMessage(prefix, message, distribution, sender)
     if prefix ~= ADDON_PREFIX then return end
     if not message or message == "" then return end
 
-    -- Ignore our own messages (sender format is "Name-Realm" or just "Name")
-    local myName = UnitName("player") or ""
+    local myName     = UnitName("player") or ""
     local senderName = sender:match("^([^%-]+)") or sender
     if senderName == myName then return end
 
@@ -199,13 +213,11 @@ function P.OnMessage(prefix, message, distribution, sender)
 end
 
 function P.HandleANN(fields)
-    local ok, reason = validateANN(fields)
-    if not ok then return end  -- silently drop invalid messages
+    local ok = validateANN(fields)
+    if not ok then return end
 
-    local myRealm = OnlineWhenDB and OnlineWhenDB.settings.realm
+    local myRealm  = OnlineWhenDB and OnlineWhenDB.settings.realm
     local msgRealm = fields[4]
-
-    -- Realm guard: only accept entries from same realm
     if myRealm and msgRealm ~= myRealm then return end
 
     local entry = {

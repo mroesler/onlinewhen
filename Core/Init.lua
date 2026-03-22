@@ -11,15 +11,22 @@ OnlineWhen = OW
 
 local eventFrame = CreateFrame("Frame", "OnlineWhenEventFrame")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
+eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:RegisterEvent("CHAT_MSG_ADDON")
+eventFrame:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE")
 eventFrame:RegisterEvent("CHANNEL_UI_UPDATE")
 eventFrame:RegisterEvent("PLAYER_LOGOUT")
 
 eventFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" then
         OW.OnLogin()
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        local isInitialLogin = ...
+        if isInitialLogin and OW.Protocol then OW.Protocol.JoinSyncChannel() end
     elseif event == "CHAT_MSG_ADDON" then
         if OW.Protocol and OW.Protocol.OnMessage then OW.Protocol.OnMessage(...) end
+    elseif event == "CHAT_MSG_CHANNEL_NOTICE" then
+        if OW.Protocol then OW.Protocol.OnChannelNotice(...) end
     elseif event == "CHANNEL_UI_UPDATE" then
         if OW.Protocol then OW.Protocol.OnChannelUpdate() end
     elseif event == "PLAYER_LOGOUT" then
@@ -46,13 +53,8 @@ function OW.OnLogin()
         OW.UI.CreateMainWindow()
     end
 
-    if OW.Protocol then
-        OW.Protocol.JoinSyncChannel()
-        C_Timer.After(3, function()
-            OW.Protocol.BroadcastSelf()
-            C_Timer.After(1, OW.Protocol.RequestPeers)
-        end)
-    end
+    -- Initial broadcast and peer request happen in Protocol.OnChannelNotice
+    -- once the channel is confirmed joined on the player's first click.
 end
 
 function OW.OnLogout()

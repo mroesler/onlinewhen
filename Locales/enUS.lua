@@ -1,5 +1,4 @@
 local _, OW = ...
-OW = OW or {}
 
 OW.L = {
     -- Window tabs
@@ -31,6 +30,3 @@ OW.L = {
     -- Slash commands
     RESET_DONE      = "Database reset.",
 }
-
--- Make accessible as OnlineWhen.L after core loads
-if OnlineWhen then OnlineWhen.L = OW.L end

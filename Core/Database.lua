@@ -10,7 +10,6 @@ function OW.EnsureDefaults()
     local db = OnlineWhenDB
     if db.peers    == nil then db.peers    = {} end
     if db.settings == nil then db.settings = {} end
-    if db.settings.lastSync == nil then db.settings.lastSync = 0 end
 end
 
 function OW.GetMyEntry()
