@@ -11,15 +11,15 @@ local sortColumn = "time"
 local sortDir    = "ASC"
 
 -- Layout constants
--- Content width = WINDOW_W(620) - INSET*2(12) = 608
--- scrollFrame right offset = 22 (scrollbar area)
--- Actual scrollable content width ≈ 608 - 22 = 586, minus scrollbar ~16 = 570 → use 560
-local CONTENT_W  = 560
+-- Content width = WINDOW_W(720) - INSET*2(12) = 708
+-- scrollFrame right offset = 22 (scrollbar sits outside scrollFrame bounds)
+-- Full scrollFrame width = 708 - 22 = 686 → use 684 (2px breathing room)
+local CONTENT_W  = 684
 local ROW_HEIGHT = 30
 local MAX_ROWS   = 50   -- pool size; scroll handles visibility
 
-local COL_X = { name = 0,   role = 145, level = 210, time = 280 }
-local COL_W = { name = 140, role = 60,  level = 65,  time = 280 }
+local COL_X = { name = 0,   role = 145, level = 210, time = 280, actions = 565 }
+local COL_W = { name = 140, role = 60,  level = 65,  time = 280, actions = 90  }
 
 local headerBtns   = {}
 local rowPool      = {}
@@ -161,8 +161,31 @@ local function updateRows(entries)
             row.timeSecondary:SetTextColor(unpack(DIM))
             row.timeSecondary:SetAlpha(alpha)
 
+            local myEntry  = OnlineWhen.GetMyEntry()
+            local isSelf   = myEntry and entry.name == myEntry.name
+            local inGroup  = false
+            for i = 1, 4 do
+                if UnitExists("party" .. i) and UnitName("party" .. i) == entry.name then
+                    inGroup = true
+                    break
+                end
+            end
+            if isSelf or inGroup then
+                row.inviteBtn:Hide()
+            else
+                row.inviteBtn:Show()
+                local entryName = entry.name
+                row.inviteBtn:SetScript("OnClick", function()
+                    SendChatMessage(
+                        "Hey " .. entryName .. ", I am using OnlineWhen and would like to group with you.",
+                        "WHISPER", nil, entryName)
+                    SlashCmdList["INVITE"](entryName)
+                end)
+            end
+
             row.frame:Show()
         else
+            row.inviteBtn:Hide()
             row.frame:Hide()
         end
     end
@@ -231,6 +254,20 @@ function TL.Build(parent)
     makeHeader("level", L.COL_LEVEL or "Level",                   COL_X.level, COL_W.level)
     makeHeader("time",  L.COL_TIME  or "Online At",               COL_X.time,  COL_W.time)
 
+    -- Non-sortable "Actions" header (plain FontString, no click handler)
+    local actionsHdr = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    actionsHdr:SetPoint("TOPLEFT", parent, "TOPLEFT", COL_X.actions, headerY)
+    actionsHdr:SetSize(COL_W.actions, 20)
+    actionsHdr:SetJustifyH("CENTER")
+    actionsHdr:SetText(L.COL_ACTIONS or "Actions")
+    actionsHdr:SetTextColor(unpack(WHITE))
+
+    local actionsLine = parent:CreateTexture(nil, "BACKGROUND")
+    actionsLine:SetColorTexture(0.3, 0.3, 0.35, 1)
+    actionsLine:SetPoint("BOTTOMLEFT",  actionsHdr, "BOTTOMLEFT",  0, 0)
+    actionsLine:SetPoint("BOTTOMRIGHT", actionsHdr, "BOTTOMRIGHT", 0, 0)
+    actionsLine:SetHeight(1)
+
     local divider = parent:CreateTexture(nil, "ARTWORK")
     divider:SetColorTexture(0.25, 0.25, 0.3, 1)
     divider:SetPoint("TOPLEFT",  parent, "TOPLEFT",  0, headerY - 20)
@@ -255,17 +292,15 @@ function TL.Build(parent)
         rowFrame:SetPoint("TOPLEFT", contentFrame, "TOPLEFT", 0, -(i - 1) * ROW_HEIGHT)
         rowFrame:SetSize(CONTENT_W, ROW_HEIGHT)
 
-        -- Alternating subtle background
-        if i % 2 == 0 then
-            local bg = rowFrame:CreateTexture(nil, "BACKGROUND")
-            bg:SetAllPoints()
-            bg:SetColorTexture(1, 1, 1, 0.03)
-        end
+        -- Row background: all rows get a base tint; even rows slightly brighter
+        local bg = rowFrame:CreateTexture(nil, "BACKGROUND")
+        bg:SetAllPoints()
+        bg:SetColorTexture(1, 1, 1, i % 2 == 0 and 0.04 or 0.01)
 
         -- Character name (vertically centred)
         local nameFs = rowFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        nameFs:SetPoint("LEFT", rowFrame, "LEFT", COL_X.name, 0)
-        nameFs:SetWidth(COL_W.name)
+        nameFs:SetPoint("LEFT", rowFrame, "LEFT", COL_X.name + 6, 0)
+        nameFs:SetWidth(COL_W.name - 6)
         nameFs:SetJustifyH("LEFT")
         nameFs:SetTextColor(unpack(WHITE))
 
@@ -296,6 +331,13 @@ function TL.Build(parent)
         timeSecondary:SetJustifyH("LEFT")
         timeSecondary:SetTextColor(unpack(DIM))
 
+        -- Invite button (Actions column)
+        local inviteBtn = CreateFrame("Button", nil, rowFrame, "UIPanelButtonTemplate")
+        inviteBtn:SetSize(70, 20)
+        inviteBtn:SetPoint("LEFT", rowFrame, "LEFT", COL_X.actions + (COL_W.actions - 70) / 2, 0)
+        inviteBtn:SetText("Invite")
+        inviteBtn:Hide()
+
         rowPool[i] = {
             frame         = rowFrame,
             name          = nameFs,
@@ -303,6 +345,7 @@ function TL.Build(parent)
             level         = levelFs,
             timePrimary   = timePrimary,
             timeSecondary = timeSecondary,
+            inviteBtn     = inviteBtn,
         }
         rowFrame:Hide()
     end

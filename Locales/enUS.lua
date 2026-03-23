@@ -23,6 +23,7 @@ OW.L = {
     COL_ROLE        = "Role",
     COL_LEVEL       = "Lvl",
     COL_TIME        = "Online At",
+    COL_ACTIONS     = "Actions",
     BTN_REFRESH     = "Sync",
     BTN_REQUESTING  = "Syncing...",
     BTN_CLEAR_OLD   = "Clear Past",

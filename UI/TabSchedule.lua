@@ -353,7 +353,7 @@ function TI.Build(parent)
 
     -- Group box width = parent width minus 2×side margin (6px each side)
     local MARGIN = 6
-    local GW     = 596   -- 608 content width − 2×6 margin
+    local GW     = 696   -- 708 content width − 2×6 margin
 
     -- Group 1 position in parent
     local G1_Y   = -MARGIN               -- 6px from content area top
@@ -454,7 +454,7 @@ function TI.Build(parent)
     -- Use TOP anchor at content-center-x for horizontal centering.
     -- ============================================================
     local G2_bottom   = math.abs(G2_Y) + G2_H     -- distance from parent top to G2 bottom
-    local CONTENT_H   = 432                         -- estimated content area height
+    local CONTENT_H   = 472                         -- estimated content area height (520 window − 32 tab − 10 insets − 6 gap)
     local btnH        = 28
     local spaceBelow  = CONTENT_H - G2_bottom
     local btnTopY     = -(G2_bottom + (spaceBelow - btnH) / 2)

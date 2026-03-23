@@ -4,8 +4,8 @@ local addonName, OW = ...
 OW.UI = {}
 local UI = OW.UI
 
-local WINDOW_W  = 620
-local WINDOW_H  = 480
+local WINDOW_W  = 720
+local WINDOW_H  = 520
 local TAB_COUNT = 2
 local TAB_H     = 32   -- height of the integrated tab header strip
 local INSET     = 6    -- interior inset from frame edge
@@ -193,6 +193,9 @@ function UI.ShowTab(n)
     tabFrames[n]:Show()
     updateTabVisuals()
 
+    if n == 1 and OW.TabSchedule then
+        OW.TabSchedule.Populate()
+    end
     if n == 2 and OW.TabPlayers then
         OW.TabPlayers.Refresh()
     end

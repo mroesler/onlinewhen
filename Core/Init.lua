@@ -16,6 +16,7 @@ eventFrame:RegisterEvent("CHAT_MSG_CHANNEL")
 eventFrame:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE")
 eventFrame:RegisterEvent("CHANNEL_UI_UPDATE")
 eventFrame:RegisterEvent("PLAYER_LOGOUT")
+eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
 eventFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" then
@@ -28,6 +29,10 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         if OW.Protocol then OW.Protocol.OnChannelNotice(...) end
     elseif event == "CHANNEL_UI_UPDATE" then
         if OW.Protocol then OW.Protocol.OnChannelUpdate() end
+    elseif event == "GROUP_ROSTER_UPDATE" then
+        if OW.TabPlayers and OW.UI and OW.UI.GetCurrentTab and OW.UI.GetCurrentTab() == 2 then
+            OW.TabPlayers.Refresh()
+        end
     elseif event == "PLAYER_LOGOUT" then
         OW.OnLogout()
     end
