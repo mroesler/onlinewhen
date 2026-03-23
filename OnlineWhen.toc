@@ -2,11 +2,12 @@
 ## Title: OnlineWhen
 ## Notes: See and share when you'll be online next
 ## Author: Speedlemon@Thunderstrike
-## Version: 1.0.5
+## Version: 1.0.6
 ## SavedVariables: OnlineWhenDB
 
 Locales/enUS.lua
 Data/Timezones.lua
+Core/Status.lua
 Core/Database.lua
 Network/Protocol.lua
 UI/Window.lua

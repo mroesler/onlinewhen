@@ -11,15 +11,15 @@ local sortColumn = "time"
 local sortDir    = "ASC"
 
 -- Layout constants
--- Content width = WINDOW_W(720) - INSET*2(12) = 708
+-- Content width = WINDOW_W(740) - INSET*2(12) = 728
 -- scrollFrame right offset = 22 (scrollbar sits outside scrollFrame bounds)
--- Full scrollFrame width = 708 - 22 = 686 → use 684 (2px breathing room)
-local CONTENT_W  = 684
+-- Full scrollFrame width = 728 - 22 = 706 → use 704 (2px breathing room)
+local CONTENT_W  = 704
 local ROW_HEIGHT = 30
 local MAX_ROWS   = 50   -- pool size; scroll handles visibility
 
-local COL_X = { name = 0,   role = 145, level = 210, time = 280, actions = 565 }
-local COL_W = { name = 140, role = 60,  level = 65,  time = 280, actions = 90  }
+local COL_X = { status = 0,  name = 20,  role = 165, level = 230, time = 300, actions = 585 }
+local COL_W = { status = 18, name = 140, role = 60,  level = 65,  time = 280, actions = 90  }
 
 local headerBtns   = {}
 local rowPool      = {}
@@ -43,6 +43,9 @@ local ROLE_COLOR = {
 -- Sorting
 -- ---------------------------------------------------------------------------
 
+-- Display order for status sort: online first, then unknown, then offline
+local STATUS_SORT_ORDER = { [1] = 1, [0] = 2, [2] = 3 }   -- STATUS_ONLINE=1, UNKNOWN=0, OFFLINE=2
+
 local function sortEntries(entries)
     table.sort(entries, function(a, b)
         if not a or not b then return false end
@@ -56,6 +59,11 @@ local function sortEntries(entries)
         elseif sortColumn == "level" then
             av = a.level or 0
             bv = b.level or 0
+        elseif sortColumn == "status" then
+            local sa = OW.GetStatusForEntry and OW.GetStatusForEntry(a.name) or OW.STATUS_UNKNOWN
+            local sb = OW.GetStatusForEntry and OW.GetStatusForEntry(b.name) or OW.STATUS_UNKNOWN
+            av = STATUS_SORT_ORDER[sa] or 2
+            bv = STATUS_SORT_ORDER[sb] or 2
         else
             av = a.onlineAt or 0
             bv = b.onlineAt or 0
@@ -136,16 +144,30 @@ end
 local function updateRows(entries)
     local now = (GetServerTime and GetServerTime()) or time()
 
+    local GRACE = 30 * 60
     for i, row in ipairs(rowPool) do
         local entry = entries[i]
         if entry then
-            local isPast = entry.onlineAt and entry.onlineAt <= now
+            local entryStatus = OW.GetStatusForEntry and OW.GetStatusForEntry(entry.name) or OW.STATUS_UNKNOWN
+            local isPast = entry.onlineAt and entry.onlineAt <= (now - GRACE) and entryStatus ~= OW.STATUS_ONLINE
             local alpha  = isPast and 0.38 or 1.0
 
             local primaryStr, secondaryStr = formatTimes(entry.onlineAt)
 
             row.name:SetText(entry.name or "?")
             row.name:SetTextColor(1, 1, 1, alpha)
+
+            -- Status dot
+            if entryStatus == OW.STATUS_ONLINE then
+                row.statusDot:SetVertexColor(0, 1, 0, 1)
+                row.dotRegion._tip = OW.L.STATUS_ONLINE or "Online"
+            elseif entryStatus == OW.STATUS_OFFLINE then
+                row.statusDot:SetVertexColor(1, 0.27, 0.27, 1)
+                row.dotRegion._tip = OW.L.STATUS_OFFLINE or "Offline"
+            else
+                row.statusDot:SetVertexColor(0.5, 0.5, 0.5, 1)
+                row.dotRegion._tip = OW.L.STATUS_UNKNOWN or "Unknown"
+            end
 
             local rc = ROLE_COLOR[entry.role] or { 0.8, 0.8, 0.8, 1 }
             row.role:SetTextColor(rc[1], rc[2], rc[3], alpha)
@@ -164,8 +186,8 @@ local function updateRows(entries)
             local myEntry  = OnlineWhen.GetMyEntry()
             local isSelf   = myEntry and entry.name == myEntry.name
             local inGroup  = false
-            for i = 1, 4 do
-                if UnitExists("party" .. i) and UnitName("party" .. i) == entry.name then
+            for j = 1, 4 do
+                if UnitExists("party" .. j) and UnitName("party" .. j) == entry.name then
                     inGroup = true
                     break
                 end
@@ -175,12 +197,28 @@ local function updateRows(entries)
             else
                 row.inviteBtn:Show()
                 local entryName = entry.name
-                row.inviteBtn:SetScript("OnClick", function()
-                    SendChatMessage(
-                        "Hey " .. entryName .. ", I am using OnlineWhen and would like to group with you.",
-                        "WHISPER", nil, entryName)
-                    SlashCmdList["INVITE"](entryName)
-                end)
+                local canInvite = (entryStatus == OW.STATUS_ONLINE)
+                row.inviteBtn:SetEnabled(canInvite)
+                if canInvite then
+                    row.inviteBtn:SetScript("OnEnter", nil)
+                    row.inviteBtn:SetScript("OnLeave", nil)
+                    row.inviteBtn:SetScript("OnClick", function()
+                        SendChatMessage(
+                            "Hey " .. entryName .. ", I am using OnlineWhen and would like to group with you.",
+                            "WHISPER", nil, entryName)
+                        SlashCmdList["INVITE"](entryName)
+                    end)
+                else
+                    row.inviteBtn:SetScript("OnClick", nil)
+                    row.inviteBtn:SetScript("OnEnter", function(self)
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                        GameTooltip:SetText(OW.L.INVITE_OFFLINE_TIP or "User is offline or cannot be invited")
+                        GameTooltip:Show()
+                    end)
+                    row.inviteBtn:SetScript("OnLeave", function()
+                        GameTooltip:Hide()
+                    end)
+                end
             end
 
             row.frame:Show()
@@ -206,6 +244,9 @@ function TL.Refresh()
     updateRows(entries)
 
     local L = OW.L
+    if headerBtns.status then
+        headerBtns.status:SetText((L.COL_STATUS or "S") .. arrowFor("status"))
+    end
     if headerBtns.name then
         headerBtns.name:SetText((L.COL_NAME or "Character Name") .. arrowFor("name"))
     end
@@ -248,6 +289,15 @@ function TL.Build(parent)
 
         headerBtns[col] = btn
     end
+
+    makeHeader("status", L.COL_STATUS or "S",                        COL_X.status, COL_W.status)
+    headerBtns["status"]:GetFontString():SetJustifyH("CENTER")
+    headerBtns["status"]:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(L.COL_STATUS_TIP or "Online / Offline status")
+        GameTooltip:Show()
+    end)
+    headerBtns["status"]:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     makeHeader("name",  (L.COL_NAME  or "Character Name") .. " ^", COL_X.name,  COL_W.name)
     makeHeader("role",  L.COL_ROLE  or "Role",                    COL_X.role,  COL_W.role)
@@ -331,6 +381,26 @@ function TL.Build(parent)
         timeSecondary:SetJustifyH("LEFT")
         timeSecondary:SetTextColor(unpack(DIM))
 
+        -- Status dot (solid colored square texture, updated each refresh)
+        local statusDot = rowFrame:CreateTexture(nil, "OVERLAY")
+        statusDot:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+        statusDot:SetSize(10, 10)
+        statusDot:SetPoint("CENTER", rowFrame, "LEFT", COL_X.status + COL_W.status / 2, 0)
+        statusDot:SetVertexColor(0.5, 0.5, 0.5, 1)   -- grey (unknown) by default
+
+        -- Transparent interactive region over the dot for tooltip support
+        local dotRegion = CreateFrame("Frame", nil, rowFrame)
+        dotRegion:SetPoint("CENTER", rowFrame, "LEFT", COL_X.status + COL_W.status / 2, 0)
+        dotRegion:SetSize(COL_W.status, ROW_HEIGHT)
+        dotRegion:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(self._tip or "")
+            GameTooltip:Show()
+        end)
+        dotRegion:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+
         -- Invite button (Actions column)
         local inviteBtn = CreateFrame("Button", nil, rowFrame, "UIPanelButtonTemplate")
         inviteBtn:SetSize(70, 20)
@@ -340,6 +410,8 @@ function TL.Build(parent)
 
         rowPool[i] = {
             frame         = rowFrame,
+            statusDot     = statusDot,
+            dotRegion     = dotRegion,
             name          = nameFs,
             role          = roleFs,
             level         = levelFs,

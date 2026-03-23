@@ -110,6 +110,7 @@ end
 -- Wire format: VERSION;TYPE;field1;field2;...  (semicolon — pipe is WoW's color escape)
 -- ANN: 1;ANN;Name;Realm;Role;Level;OnlineAtUTC;TzId;UpdatedUTC
 -- REQ: 1;REQ;Name;Realm
+-- BYE: 1;BYE;Name;Realm
 
 local SEP = ";"
 
@@ -129,6 +130,10 @@ end
 
 function P.SerializeREQ(name, realm)
     return table.concat({ MSG_VERSION, "REQ", name or "", realm or "" }, SEP)
+end
+
+function P.SerializeBYE(name, realm)
+    return table.concat({ MSG_VERSION, "BYE", name or "", realm or "" }, SEP)
 end
 
 local function split(str, sep)
@@ -187,6 +192,14 @@ function P.RequestPeers()
     sendMsg(P.SerializeREQ(myName, myRealm))
 end
 
+function P.BroadcastBye()
+    refreshChannelNum()
+    if channelNum == 0 then return end
+    local myName  = UnitName("player") or ""
+    local myRealm = (OnlineWhenDB and OnlineWhenDB.settings.realm) or GetRealmName()
+    sendMsg(P.SerializeBYE(myName, myRealm))
+end
+
 -- ---------------------------------------------------------------------------
 -- Receiving — CHAT_MSG_CHANNEL
 -- ---------------------------------------------------------------------------
@@ -208,6 +221,8 @@ function P.OnChannelMessage(msg, sender, _, _, _, _, _, msgChannelNum)
         P.HandleANN(fields)
     elseif msgType == "REQ" then
         P.HandleREQ(fields)
+    elseif msgType == "BYE" then
+        P.HandleBYE(fields)
     end
 end
 
@@ -228,8 +243,29 @@ function P.HandleANN(fields)
         updated  = tonumber(fields[9]),
     }
 
+    -- Mark online before UpsertPeer so the status is set when Refresh() runs
+    OW.playerStatus[entry.name] = OW.STATUS_ONLINE
     local key = entry.name .. "-" .. entry.realm
     OnlineWhen.UpsertPeer(key, entry)
+    -- Always refresh after a status change — UpsertPeer skips refresh when the
+    -- entry data is not newer, but the status may still have changed
+    if OW.TabPlayers and OW.UI and OW.UI.GetCurrentTab and OW.UI.GetCurrentTab() == 2 then
+        OW.TabPlayers.Refresh()
+    end
+end
+
+function P.HandleBYE(fields)
+    -- fields: [1]=version [2]="BYE" [3]=name [4]=realm
+    if #fields ~= 4 then return end
+    if fields[1] ~= MSG_VERSION then return end
+    local myRealm = OnlineWhenDB and OnlineWhenDB.settings.realm
+    if myRealm and fields[4] ~= myRealm then return end
+    local name = fields[3]
+    if not name or name == "" then return end
+    OW.playerStatus[name] = OW.STATUS_OFFLINE
+    if OW.TabPlayers and OW.UI and OW.UI.GetCurrentTab and OW.UI.GetCurrentTab() == 2 then
+        OW.TabPlayers.Refresh()
+    end
 end
 
 function P.HandleREQ(fields)

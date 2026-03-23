@@ -57,17 +57,25 @@ function OW.PurgeStalePeers()
     end
 end
 
--- Remove entries whose scheduled time has already passed.
+-- Remove entries whose scheduled time is more than 30 minutes in the past,
+-- unless the player is currently online (in which case keep them regardless).
 function OW.PurgeExpiredPeers()
-    local now = time()
+    local GRACE = 30 * 60   -- 30-minute grace period
+    local now   = time()
     for key, peer in pairs(OnlineWhenDB.peers) do
-        if peer.onlineAt and peer.onlineAt < now then
-            OnlineWhenDB.peers[key] = nil
+        if peer.onlineAt and peer.onlineAt < (now - GRACE) then
+            local status = OW.GetStatusForEntry and OW.GetStatusForEntry(peer.name) or OW.STATUS_UNKNOWN
+            if status ~= OW.STATUS_ONLINE then
+                OnlineWhenDB.peers[key] = nil
+            end
         end
     end
     local my = OnlineWhenDB.myEntry
-    if my and my.onlineAt and my.onlineAt < now then
-        OnlineWhenDB.myEntry = nil
+    if my and my.onlineAt and my.onlineAt < (now - GRACE) then
+        local status = OW.GetStatusForEntry and OW.GetStatusForEntry(my.name) or OW.STATUS_UNKNOWN
+        if status ~= OW.STATUS_ONLINE then
+            OnlineWhenDB.myEntry = nil
+        end
     end
 end
 

@@ -53,6 +53,12 @@ function OW.OnLogin()
 
     OW.PurgeStalePeers()
 
+    -- Mark self as online immediately
+    local myName = UnitName("player")
+    if myName and OW.playerStatus then
+        OW.playerStatus[myName] = OW.STATUS_ONLINE
+    end
+
     if OW.UI then
         OW.UI.CreateMainWindow()
     end
@@ -62,5 +68,7 @@ function OW.OnLogin()
 end
 
 function OW.OnLogout()
+    -- Notify peers we are going offline before disconnecting
+    if OW.Protocol then OW.Protocol.BroadcastBye() end
     if OW.UI then OW.UI.SaveWindowPosition() end
 end

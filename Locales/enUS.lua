@@ -28,6 +28,16 @@ OW.L = {
     BTN_REQUESTING  = "Syncing...",
     BTN_CLEAR_OLD   = "Clear Past",
 
+    -- Players tab — status column
+    COL_STATUS        = "S",
+    COL_STATUS_TIP    = "Online / Offline status",
+    STATUS_ONLINE     = "Online",
+    STATUS_OFFLINE    = "Offline",
+    STATUS_UNKNOWN    = "Unknown",
+
+    -- Invite button disabled state
+    INVITE_OFFLINE_TIP = "User is offline or cannot be invited",
+
     -- Slash commands
     RESET_DONE      = "Database reset.",
 }
