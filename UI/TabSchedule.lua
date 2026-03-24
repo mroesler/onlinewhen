@@ -559,7 +559,7 @@ end
 function TI.Populate()
     local my = OnlineWhen.GetMyEntry()
     if not my then return end
-    if ddSpec and my.spec then ddSpec:SetValue(my.spec); selectedSpec = my.spec end
+    -- Spec is intentionally NOT restored — user must actively select spec each save.
     if my.timezone then
         selectedTzId = my.timezone
         if ddTz then ddTz:SetValue(my.timezone) end
