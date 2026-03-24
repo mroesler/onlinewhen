@@ -17,16 +17,18 @@ function OW.GetMyEntry()
 end
 
 -- Save the player's own schedule entry and broadcast it to peers.
-function OW.SaveMyEntry(name, spec, class, level, onlineAt, tzId)
+function OW.SaveMyEntry(name, spec, class, level, onlineAt, tzId, primaryActivity, exactActivity)
     OnlineWhenDB.myEntry = {
-        name     = name,
-        realm    = OnlineWhenDB.settings.realm or GetRealmName(),
-        spec     = spec,
-        class    = class,
-        level    = level,
-        onlineAt = onlineAt,
-        timezone = tzId,
-        updated  = time(),
+        name            = name,
+        realm           = OnlineWhenDB.settings.realm or GetRealmName(),
+        spec            = spec,
+        class           = class,
+        level           = level,
+        onlineAt        = onlineAt,
+        timezone        = tzId,
+        updated         = time(),
+        primaryActivity = primaryActivity or nil,
+        exactActivity   = exactActivity   or nil,
     }
     if OW.Protocol then
         OW.Protocol.BroadcastSelf()
