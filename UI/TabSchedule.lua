@@ -5,14 +5,14 @@ OW.TabSchedule = {}
 local TI = OW.TabSchedule
 
 -- Form state
-local selectedRole = nil
+local selectedSpec = nil
 local selectedTzId = OW.DEFAULT_TIMEZONE or "Europe/Berlin"
 
 -- Widget references
 local nameBox  = nil
 local levelBox = nil
 local saveBtn  = nil
-local ddRole, ddDay, ddMonth, ddYear, ddHour, ddMin, ddTz
+local ddSpec, ddDay, ddMonth, ddYear, ddHour, ddMin, ddTz
 
 local MONTH_NAMES = {
     "January","February","March","April","May","June",
@@ -20,29 +20,29 @@ local MONTH_NAMES = {
 }
 
 -- Returns the number of days in a given month, accounting for leap years.
-local function daysInMonth(mo, yr)
-    if not mo then return 31 end
+local function daysInMonth(month, year)
+    if not month then return 31 end
     local days = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
-    if mo == 2 then
-        local leap = yr and ((yr % 4 == 0 and yr % 100 ~= 0) or (yr % 400 == 0))
+    if month == 2 then
+        local leap = year and ((year % 4 == 0 and year % 100 ~= 0) or (year % 400 == 0))
         return leap and 29 or 28
     end
-    return days[mo] or 31
+    return days[month] or 31
 end
 
 -- Rebuilds the Day dropdown items to match the currently selected month/year.
 -- Called whenever month or year changes. ddDay/ddMonth/ddYear are upvalues.
 local function updateDayItems()
     if not ddDay or not ddMonth or not ddYear then return end
-    local mo   = ddMonth:GetValue()
-    local yr   = ddYear:GetValue()
-    if not mo or not yr then return end
-    local maxD = daysInMonth(mo, yr)
-    local t    = {}
-    for d = 1, maxD do
-        t[#t+1] = { value = d, label = string.format("%02d", d) }
+    local month = ddMonth:GetValue()
+    local year  = ddYear:GetValue()
+    if not month or not year then return end
+    local maxDay = daysInMonth(month, year)
+    local items  = {}
+    for day = 1, maxDay do
+        items[#items+1] = { value = day, label = string.format("%02d", day) }
     end
-    ddDay:SetItems(t)
+    ddDay:SetItems(items)
 end
 
 -- Layout constants
@@ -175,45 +175,48 @@ end
 -- Item builders
 -- ---------------------------------------------------------------------------
 
-local function roleItems()
-    return {
-        { value = "Tank", label = "Tank" },
-        { value = "Heal", label = "Heal" },
-        { value = "DPS",  label = "DPS"  },
-    }
+-- Returns dropdown items for the specs available to the given class name.
+local function specItemsForClass(className)
+    local specs = OW.CLASS_SPECS and className and OW.CLASS_SPECS[className]
+    if not specs then return {} end
+    local items = {}
+    for _, spec in ipairs(specs) do
+        items[#items+1] = { value = spec.label, label = spec.label }
+    end
+    return items
 end
 
 local function monthItems()
-    local t = {}
-    for m = 1, 12 do t[#t+1] = { value = m, label = MONTH_NAMES[m] } end
-    return t
+    local items = {}
+    for m = 1, 12 do items[#items+1] = { value = m, label = MONTH_NAMES[m] } end
+    return items
 end
 
 local function yearItems()
-    local cur = tonumber(date("!%Y", time()))
-    local t = {}
-    for y = cur, cur + 10 do t[#t+1] = { value = y, label = tostring(y) } end
-    return t
+    local currentYear = tonumber(date("!%Y", time()))
+    local items = {}
+    for y = currentYear, currentYear + 10 do items[#items+1] = { value = y, label = tostring(y) } end
+    return items
 end
 
 local function hourItems()
-    local t = {}
-    for h = 0, 23 do t[#t+1] = { value = h, label = string.format("%02d", h) } end
-    return t
+    local items = {}
+    for hour = 0, 23 do items[#items+1] = { value = hour, label = string.format("%02d", hour) } end
+    return items
 end
 
 local function minuteItems()
-    local t = {}
-    for m = 0, 55, 5 do t[#t+1] = { value = m, label = string.format("%02d", m) } end
-    return t
+    local items = {}
+    for minute = 0, 55, 5 do items[#items+1] = { value = minute, label = string.format("%02d", minute) } end
+    return items
 end
 
 local function tzItems()
-    local t = {}
+    local items = {}
     for _, tz in ipairs(OW.Timezones) do
-        t[#t+1] = { value = tz.id, label = tz.label }
+        items[#items+1] = { value = tz.id, label = tz.label }
     end
-    return t
+    return items
 end
 
 -- ---------------------------------------------------------------------------
@@ -230,24 +233,26 @@ local function onSave()
     local name = UnitName("player") or ""
     if name == "" then showError(OW.L.ERR_NO_NAME or "Enter a name.") return end
 
-    selectedRole = ddRole and ddRole:GetValue()
-    if not selectedRole then showError(OW.L.ERR_NO_ROLE or "Select a role.") return end
+    selectedSpec = ddSpec and ddSpec:GetValue()
+    if not selectedSpec then showError(OW.L.ERR_NO_SPEC or "Select a spec.") return end
 
-    local d  = ddDay   and ddDay:GetValue()
-    local mo = ddMonth and ddMonth:GetValue()
-    local y  = ddYear  and ddYear:GetValue()
-    local h  = ddHour  and ddHour:GetValue()
-    local mi = ddMin   and ddMin:GetValue()
-    if not (d and mo and y and h and mi) then showError("Pick a date and time.") return end
+    local day    = ddDay   and ddDay:GetValue()
+    local month  = ddMonth and ddMonth:GetValue()
+    local year   = ddYear  and ddYear:GetValue()
+    local hour   = ddHour  and ddHour:GetValue()
+    local minute = ddMin   and ddMin:GetValue()
+    if not (day and month and year and hour and minute) then showError("Pick a date and time.") return end
 
     local utcTs, err = OW.BuildUTCTimestamp(
-        string.format("%04d-%02d-%02d", y, mo, d),
-        string.format("%02d:%02d", h, mi),
+        string.format("%04d-%02d-%02d", year, month, day),
+        string.format("%02d:%02d", hour, minute),
         selectedTzId)
     if not utcTs then showError(err or "Invalid date/time.") return end
 
     local level = UnitLevel("player") or 1
-    OnlineWhen.SaveMyEntry(name, selectedRole, level, utcTs, selectedTzId)
+    local _, cToken = UnitClass("player")
+    local myClass   = (cToken and OW.CLASS_TOKEN_NAME and OW.CLASS_TOKEN_NAME[cToken]) or ""
+    OnlineWhen.SaveMyEntry(name, selectedSpec, myClass, level, utcTs, selectedTzId)
 
     saveBtn:SetText(OW.L.BTN_SAVED or "Saved!")
     C_Timer.After(1.5, function()
@@ -262,23 +267,23 @@ function TI.Reset()
     local charLevel = tostring(UnitLevel("player") or "")
     if nameBox  then nameBox:SetText(charName)   end
     if levelBox then levelBox:SetText(charLevel) end
-    if ddRole   then ddRole:ClearValue() end
-    selectedRole = nil
+    if ddSpec   then ddSpec:ClearValue() end
+    selectedSpec = nil
 
-    local serverTs  = (GetServerTime and GetServerTime()) or time()
-    local today     = tonumber(date("!%d", serverTs))
-    local thisMonth = tonumber(date("!%m", serverTs))
-    local thisYear  = tonumber(date("!%Y", serverTs))
+    local serverTimestamp = (GetServerTime and GetServerTime()) or time()
+    local today           = tonumber(date("!%d", serverTimestamp))
+    local thisMonth       = tonumber(date("!%m", serverTimestamp))
+    local thisYear        = tonumber(date("!%Y", serverTimestamp))
     if ddMonth then ddMonth:SetValue(thisMonth) end
     if ddYear  then ddYear:SetValue(thisYear)   end
     updateDayItems()
     if ddDay   then ddDay:SetValue(today)       end
 
-    local rH, rM = GetGameTime()
-    rM = math.ceil(rM / 5) * 5
-    if rM >= 60 then rM = 0; rH = (rH + 1) % 24 end
-    if ddHour then ddHour:SetValue(rH) end
-    if ddMin  then ddMin:SetValue(rM)  end
+    local realmHour, realmMinute = GetGameTime()
+    realmMinute = math.ceil(realmMinute / 5) * 5
+    if realmMinute >= 60 then realmMinute = 0; realmHour = (realmHour + 1) % 24 end
+    if ddHour then ddHour:SetValue(realmHour)   end
+    if ddMin  then ddMin:SetValue(realmMinute)  end
 
     selectedTzId = OW.DEFAULT_TIMEZONE or "Europe/Berlin"
     if ddTz then ddTz:SetValue(selectedTzId) end
@@ -338,131 +343,137 @@ end
 -- ---------------------------------------------------------------------------
 
 function TI.Build(parent)
-    local L   = OW.L
-    local px  = INNER_PAD   -- shared left x for labels and inputs inside each group
+    local L            = OW.L
+    local contentLeft  = INNER_PAD   -- shared left x for labels and inputs inside each group
 
     -- Group box dimensions
-    -- Group 1 (Character): title + name + role
-    --   CONTENT_Y(-28) → name lbl → -48 → editbox(24) → -82 → role lbl → -102 → dd(26) → -128 → +INNER_PAD = 140
-    local G1_H = 140
+    -- Group 1 (Character): title + single label row + single field row (all four fields inline)
+    --   CONTENT_Y(-28) → labels(20) → fields(26) → INNER_PAD(16) → charGroupHeight = 90
+    local charGroupHeight = 90
 
-    -- Group 2 (Date & Time): title + date + time + timezone + note
-    --   CONTENT_Y(-28) → date lbl → -48 → dd(26) → -84 → time lbl → -104 → dd(26) → -140
-    --   → tz lbl → -160 → dd(26) → -196 → note(~12) → -218 → +INNER_PAD = 230
-    local G2_H = 230
+    -- Save button metrics — needed to size Group 2
+    local saveButtonHeight  = 28
+    local saveButtonPadding = 14   -- equal gap: G2-bottom→button-top and button-bottom→frame-bottom
+
+    -- contentAreaHeight = tab frame height: 520 window − 32 tab − 6 top inset − 6 bottom inset − 4 gap = 472
+    local contentAreaHeight = 472
+
+    -- Group 2 fills all remaining space so saveButtonPadding is equal on both sides of the button
+    --   dateTimeGroupTopAbs = groupMargin + charGroupHeight + 8 = 6 + 90 + 8 = 104
+    --   dateTimeGroupHeight = contentAreaHeight − dateTimeGroupTopAbs − (saveButtonPadding + saveButtonHeight + saveButtonPadding) = 472 − 104 − 56 = 312
+    local dateTimeGroupHeight = 312
 
     -- Group box width = parent width minus 2×side margin (6px each side)
-    local MARGIN = 6
-    local GW     = 716   -- 728 content width − 2×6 margin
+    local groupMargin = 6
+    local groupWidth  = 776   -- 788 content width − 2×6 margin
 
     -- Group 1 position in parent
-    local G1_Y   = -MARGIN               -- 6px from content area top
+    local charGroupY     = -groupMargin               -- 6px from content area top
     -- Group 2 position in parent
-    local G2_Y   = G1_Y - G1_H - 8       -- 8px gap between groups
+    local dateTimeGroupY = charGroupY - charGroupHeight - 8   -- 8px gap between groups
 
     -- ============================================================
     -- GROUP 1 — Character
     -- ============================================================
-    local g1 = makeGroupBox(parent, "Character", MARGIN, G1_Y, GW, G1_H)
+    local charGroup = makeGroupBox(parent, "Character", groupMargin, charGroupY, groupWidth, charGroupHeight)
 
-    local py = CONTENT_Y
+    local curY = CONTENT_Y
 
-    -- Name + Level labels on the same row
-    lbl(g1, L.LABEL_NAME  or "Character Name", px,        py)
-    lbl(g1, L.LABEL_LEVEL or "Level",          px + 210,  py)
-    py = py - 20
+    -- Labels: Name | Level | Class | Spec — all on one row
+    lbl(charGroup, L.LABEL_NAME  or "Character Name", contentLeft,        curY)
+    lbl(charGroup, L.LABEL_LEVEL or "Level",          contentLeft + 210,  curY)
+    lbl(charGroup, "Class",                           contentLeft + 280,  curY)
+    lbl(charGroup, L.LABEL_SPEC  or "Spec",           contentLeft + 430,  curY)
+    curY = curY - 20
 
-    -- Name + Level: readonly display fields (pre-filled from current character)
-    nameBox  = makeReadonlyField(g1, px,       py, 195)
-    levelBox = makeReadonlyField(g1, px + 210, py, 50)
+    -- Fields: Name (readonly) | Level (readonly) | Class (readonly) | Spec (dropdown)
+    nameBox  = makeReadonlyField(charGroup, contentLeft,       curY, 195)
+    levelBox = makeReadonlyField(charGroup, contentLeft + 210, curY, 50)
     nameBox:SetText(UnitName("player") or "")
     levelBox:SetText(tostring(UnitLevel("player") or ""))
 
-    py = py - 34   -- 24px editbox + 10px section gap
-    lbl(g1, L.LABEL_ROLE or "Role", px, py)
-    py = py - 20
-    ddRole = makeDropdown(g1, "OWDdRole", roleItems(), nil, px, py, 100,
-        function(v) selectedRole = v end, "— Select —")
+    local _, classToken = UnitClass("player")
+    local className     = classToken and OW.CLASS_TOKEN_NAME and OW.CLASS_TOKEN_NAME[classToken]
+    local classColor    = className and OW.CLASS_COLOR and OW.CLASS_COLOR[className]
+    local classFs       = makeReadonlyField(charGroup, contentLeft + 280, curY, 130)
+    classFs:SetText(className or "")
+    if classColor then
+        nameBox:SetTextColor(classColor[1], classColor[2], classColor[3], 1)
+        classFs:SetTextColor(classColor[1], classColor[2], classColor[3], 1)
+    end
+
+    ddSpec = makeDropdown(charGroup, "OWDdSpec", specItemsForClass(className), nil, contentLeft + 430, curY, 130,
+        function(v) selectedSpec = v end, "— Select —")
 
     -- ============================================================
     -- GROUP 2 — Date & Time
     -- ============================================================
-    local g2 = makeGroupBox(parent, "Date & Time", MARGIN, G2_Y, GW, G2_H)
+    local dateTimeGroup = makeGroupBox(parent, "Date & Time", groupMargin, dateTimeGroupY, groupWidth, dateTimeGroupHeight)
 
-    py = CONTENT_Y
+    curY = CONTENT_Y
 
-    -- Date row: Month | Day | Year — all left-aligned at px
+    -- Date row: Month | Day | Year — all left-aligned at contentLeft
     -- Horizontal offsets (frame anchor = visual x - 16 due to UIDropDownMenu padding):
-    --   Month visual at px        → frame at px - 16
-    --   Day   visual at px + 130  → frame at px + 114
-    --   Year  visual at px + 195  → frame at px + 179
-    lbl(g2, L.LABEL_DATE or "Date", px, py)
-    py = py - 20
+    --   Month visual at contentLeft        → frame at contentLeft - 16
+    --   Day   visual at contentLeft + 130  → frame at contentLeft + 114
+    --   Year  visual at contentLeft + 195  → frame at contentLeft + 179
+    lbl(dateTimeGroup, L.LABEL_DATE or "Date", contentLeft, curY)
+    curY = curY - 20
 
     -- Use server timestamp for date; GetGameTime() for realm H:M (matches the in-game clock).
-    local serverTs  = (GetServerTime and GetServerTime()) or time()
-    local today     = tonumber(date("!%d", serverTs))
-    local thisMonth = tonumber(date("!%m", serverTs))
-    local thisYear  = tonumber(date("!%Y", serverTs))
+    local serverTimestamp = (GetServerTime and GetServerTime()) or time()
+    local today           = tonumber(date("!%d", serverTimestamp))
+    local thisMonth       = tonumber(date("!%m", serverTimestamp))
+    local thisYear        = tonumber(date("!%Y", serverTimestamp))
 
     -- Order: Month | Day | Year
     -- Month onChange rebuilds Day items; Year onChange does the same (Feb leap-year check).
     local initDayItems = {}
-    for d = 1, daysInMonth(thisMonth, thisYear) do
-        initDayItems[#initDayItems+1] = { value = d, label = string.format("%02d", d) }
+    for day = 1, daysInMonth(thisMonth, thisYear) do
+        initDayItems[#initDayItems+1] = { value = day, label = string.format("%02d", day) }
     end
 
-    ddMonth = makeDropdown(g2, "OWDdMonth", monthItems(),   thisMonth, px,        py, 110, function() updateDayItems() end)
-    ddDay   = makeDropdown(g2, "OWDdDay",   initDayItems,   today,     px + 130,  py, 42,  nil)
-    ddYear  = makeDropdown(g2, "OWDdYear",  yearItems(),    thisYear,  px + 195,  py, 68,  function() updateDayItems() end)
+    ddMonth = makeDropdown(dateTimeGroup, "OWDdMonth", monthItems(),   thisMonth, contentLeft,        curY, 110, function() updateDayItems() end)
+    ddDay   = makeDropdown(dateTimeGroup, "OWDdDay",   initDayItems,   today,     contentLeft + 130,  curY, 42,  nil)
+    ddYear  = makeDropdown(dateTimeGroup, "OWDdYear",  yearItems(),    thisYear,  contentLeft + 195,  curY, 68,  function() updateDayItems() end)
 
-    -- Time row: Hour | Minute — aligned at px, same rhythm
-    py = py - 36
-    lbl(g2, L.LABEL_TIME or "Time", px, py)
-    py = py - 20
+    -- Time row: Hour | Minute — equal spacing below date section
+    curY = curY - 62
+    lbl(dateTimeGroup, L.LABEL_TIME or "Time", contentLeft, curY)
+    curY = curY - 20
 
     -- Default to current realm time rounded up to nearest 5-minute mark.
-    local defH, defM = GetGameTime()
-    defM = math.ceil(defM / 5) * 5
-    if defM >= 60 then defM = 0; defH = (defH + 1) % 24 end
+    local defaultHour, defaultMinute = GetGameTime()
+    defaultMinute = math.ceil(defaultMinute / 5) * 5
+    if defaultMinute >= 60 then defaultMinute = 0; defaultHour = (defaultHour + 1) % 24 end
 
-    ddHour = makeDropdown(g2, "OWDdHour", hourItems(),   defH, px,      py, 42, nil)
-    ddMin  = makeDropdown(g2, "OWDdMin",  minuteItems(), defM, px + 74, py, 42, nil)
+    ddHour = makeDropdown(dateTimeGroup, "OWDdHour", hourItems(),   defaultHour,   contentLeft,      curY, 42, nil)
+    ddMin  = makeDropdown(dateTimeGroup, "OWDdMin",  minuteItems(), defaultMinute, contentLeft + 74, curY, 42, nil)
 
-    -- Timezone
-    py = py - 36
-    lbl(g2, L.LABEL_TIMEZONE or "Timezone", px, py)
-    py = py - 20
+    -- Timezone — equal spacing below time section
+    curY = curY - 62
+    lbl(dateTimeGroup, L.LABEL_TIMEZONE or "Timezone", contentLeft, curY)
+    curY = curY - 20
 
-    ddTz = makeDropdown(g2, "OWDdTz", tzItems(), selectedTzId, px, py, 320, function(v)
+    ddTz = makeDropdown(dateTimeGroup, "OWDdTz", tzItems(), selectedTzId, contentLeft, curY, 320, function(v)
         selectedTzId = v
     end)
 
     -- Helper note (below timezone dropdown, inside group)
-    py = py - 36
-    local note = g2:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    note:SetPoint("TOPLEFT", g2, "TOPLEFT", px, py)
+    curY = curY - 62
+    local note = dateTimeGroup:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    note:SetPoint("TOPLEFT", dateTimeGroup, "TOPLEFT", contentLeft, curY)
     note:SetText(L.TZ_NOTE or "Pick the time in your timezone — it will be converted to Server Time automatically.")
     note:SetTextColor(unpack(DIM))
 
     -- ============================================================
-    -- SAVE BUTTON — child of parent, centered, below Group 2
-    -- Vertical: equal spacing between Group 2 bottom and content area bottom.
-    --   Group 2 bottom in parent coords: G2_Y - G2_H
-    --   Content area bottom: approximately -432 (480 window - 32 tab - 6 top - 6 bottom - 4 gap)
-    --   Available: 432 - (|G2_Y| + G2_H)
-    -- Use TOP anchor at content-center-x for horizontal centering.
+    -- SAVE BUTTON — centered horizontally, equal spacing to Group 2 bottom and frame bottom.
+    --   saveButtonPadding (14px) is identical above and below the button.
+    --   Anchored at BOTTOM so it moves naturally if window height changes.
     -- ============================================================
-    local G2_bottom   = math.abs(G2_Y) + G2_H     -- distance from parent top to G2 bottom
-    local CONTENT_H   = 472                         -- estimated content area height (520 window − 32 tab − 10 insets − 6 gap)
-    local btnH        = 28
-    local spaceBelow  = CONTENT_H - G2_bottom
-    local btnTopY     = -(G2_bottom + (spaceBelow - btnH) / 2)
-
     saveBtn = CreateFrame("Button", nil, parent, "GameMenuButtonTemplate")
-    saveBtn:SetSize(140, btnH)
-    -- TOP anchor at parent center → horizontally centered
-    saveBtn:SetPoint("TOP", parent, "TOP", 0, btnTopY)
+    saveBtn:SetSize(140, saveButtonHeight)
+    saveBtn:SetPoint("BOTTOM", parent, "BOTTOM", 0, saveButtonPadding)
     saveBtn:SetText(L.BTN_SAVE or "Save")
     saveBtn:SetScript("OnClick", onSave)
 end
@@ -471,7 +482,7 @@ end
 function TI.Populate()
     local my = OnlineWhen.GetMyEntry()
     if not my then return end
-    if ddRole and my.role then ddRole:SetValue(my.role); selectedRole = my.role end
+    if ddSpec and my.spec then ddSpec:SetValue(my.spec); selectedSpec = my.spec end
     if my.timezone then
         selectedTzId = my.timezone
         if ddTz then ddTz:SetValue(my.timezone) end

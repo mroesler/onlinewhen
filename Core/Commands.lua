@@ -39,13 +39,13 @@ end
 -- ---------------------------------------------------------------------------
 
 function OW.PrintHelp()
-    local p = function(line) print(line) end
-    p("|cFFFFD700=== OnlineWhen Commands ===|r")
-    p("|cFF00FF00/ow|r or |cFF00FF00/onlinewhen|r  — Toggle the OnlineWhen window")
-    p("|cFF00FF00/ow help|r                — Show this help text")
-    p("|cFF00FF00/ow channel|r             — Print the active sync channel name and number")
-    p("|cFF00FF00/ow reset|r               — Wipe the saved database and clear the player list")
-    p("|cFF00FF00/ow debug|r               — Dump the full saved database to the chat window")
+    local printLine = function(line) print(line) end
+    printLine("|cFFFFD700=== OnlineWhen Commands ===|r")
+    printLine("|cFF00FF00/ow|r or |cFF00FF00/onlinewhen|r - Toggle the OnlineWhen window")
+    printLine("|cFF00FF00/ow help|r - Show this help text")
+    printLine("|cFF00FF00/ow channel|r - Print the active sync channel name and number")
+    printLine("|cFF00FF00/ow reset|r - Wipe the saved database and clear the player list")
+    printLine("|cFF00FF00/ow debug|r - Dump the full saved database to the chat window")
 end
 
 -- ---------------------------------------------------------------------------
@@ -55,24 +55,36 @@ end
 function OW.PrintDebug()
     local db = OnlineWhenDB
     print("|cFFFFD700=== OnlineWhen Debug ===|r")
-    print(string.format("  Realm: %s", tostring(db.settings.realm)))
+    print(string.format("  settings.realm = %s", tostring(db.settings.realm)))
 
-    local my = db.myEntry
-    if my then
-        print("  My Entry:")
-        print(string.format("    %s | %s | onlineAt=%d | tz=%s | updated=%d",
-            tostring(my.name), tostring(my.role),
-            my.onlineAt or 0, tostring(my.timezone), my.updated or 0))
+    local myEntry = db.myEntry
+    if myEntry then
+        print("  myEntry = {")
+        print(string.format("    name     = %s", tostring(myEntry.name)))
+        print(string.format("    spec     = %s", tostring(myEntry.spec)))
+        print(string.format("    class    = %s", tostring(myEntry.class)))
+        print(string.format("    level    = %s", tostring(myEntry.level)))
+        print(string.format("    onlineAt = %d", myEntry.onlineAt or 0))
+        print(string.format("    timezone = %s", tostring(myEntry.timezone)))
+        print(string.format("    updated  = %d", myEntry.updated or 0))
+        print("  }")
     else
-        print("  My Entry: (none)")
+        print("  myEntry = (none)")
     end
 
-    local count = 0
-    for _ in pairs(db.peers) do count = count + 1 end
-    print(string.format("  Peers (%d):", count))
+    local peerCount = 0
+    for _ in pairs(db.peers) do peerCount = peerCount + 1 end
+    print(string.format("  peers (%d) = {", peerCount))
     for key, peer in pairs(db.peers) do
-        print(string.format("    [%s] %s | %s | onlineAt=%d | updated=%d",
-            key, tostring(peer.name), tostring(peer.role),
-            peer.onlineAt or 0, peer.updated or 0))
+        print(string.format("    [\"%s\"] = {", key))
+        print(string.format("      name     = %s", tostring(peer.name)))
+        print(string.format("      spec     = %s", tostring(peer.spec)))
+        print(string.format("      class    = %s", tostring(peer.class)))
+        print(string.format("      level    = %s", tostring(peer.level)))
+        print(string.format("      onlineAt = %d", peer.onlineAt or 0))
+        print(string.format("      timezone = %s", tostring(peer.timezone)))
+        print(string.format("      updated  = %d", peer.updated or 0))
+        print("    }")
     end
+    print("  }")
 end

@@ -10,7 +10,15 @@ local P = OW.Protocol
 local CHANNEL_PREFIX = "ow"   -- realm name appended at runtime, e.g. "owthunderstrike"
 local MSG_PREFIX     = "OW:"  -- prepended to every chat message we send
 local MSG_VERSION    = "1"
-local VALID_ROLES    = { Tank = true, Heal = true, DPS = true }
+-- Build valid spec and class sets from definitions (Specs.lua loads before this file)
+local VALID_SPECS   = {}
+for _, specs in pairs(OW.CLASS_SPECS) do
+    for _, spec in ipairs(specs) do VALID_SPECS[spec.label] = true end
+end
+local VALID_CLASSES = {
+    Druid = true, Hunter = true, Mage    = true, Paladin = true, Priest  = true,
+    Rogue = true, Shaman = true, Warlock = true, Warrior = true,
+}
 -- Sanity bounds for timestamps: 30 days in the past, 60 days in the future
 local TS_MIN_OFFSET  = -30 * 24 * 60 * 60
 local TS_MAX_OFFSET  =  60 * 24 * 60 * 60
@@ -108,7 +116,7 @@ end
 -- Serialization
 -- ---------------------------------------------------------------------------
 -- Wire format: VERSION;TYPE;field1;field2;...  (semicolon — pipe is WoW's color escape)
--- ANN: 1;ANN;Name;Realm;Role;Level;OnlineAtUTC;TzId;UpdatedUTC
+-- ANN: 1;ANN;Name;Realm;Spec;Level;OnlineAtUTC;TzId;UpdatedUTC;Class
 -- REQ: 1;REQ;Name;Realm
 -- BYE: 1;BYE;Name;Realm
 
@@ -120,11 +128,12 @@ function P.SerializeANN(entry)
         "ANN",
         entry.name     or "",
         entry.realm    or "",
-        entry.role     or "",
+        entry.spec     or "",
         tostring(entry.level    or 1),
         tostring(entry.onlineAt or 0),
         entry.timezone or "UTC",
         tostring(entry.updated  or 0),
+        entry.class    or "",
     }, SEP)
 end
 
@@ -153,11 +162,18 @@ end
 -- ---------------------------------------------------------------------------
 
 local function validateANN(fields)
-    -- fields: [1]=version [2]="ANN" [3]=name [4]=realm [5]=role
-    --         [6]=level [7]=onlineAt [8]=tzId [9]=updated
-    if #fields ~= 9 then return false end
+    -- fields: [1]=version [2]="ANN" [3]=name [4]=realm [5]=spec
+    --         [6]=level [7]=onlineAt [8]=tzId [9]=updated [10]=class
+    if #fields ~= 10 then return false end
     if fields[1] ~= MSG_VERSION then return false end
-    if not VALID_ROLES[fields[5]] then return false end
+    if fields[5] ~= "" and not VALID_SPECS[fields[5]] then return false end
+    if fields[10] ~= "" and not VALID_CLASSES[fields[10]] then return false end
+    -- Cross-validate: spec must belong to the stated class when both are set
+    if fields[10] ~= "" and fields[5] ~= "" then
+        if not (OW.SPEC_ID[fields[10]] and OW.SPEC_ID[fields[10]][fields[5]]) then
+            return false
+        end
+    end
 
     local level = tonumber(fields[6])
     if not level or level < 1 or level > 70 then return false end
@@ -236,15 +252,16 @@ function P.HandleANN(fields)
     local entry = {
         name     = fields[3],
         realm    = fields[4],
-        role     = fields[5],
+        spec     = fields[5] ~= "" and fields[5] or nil,
         level    = tonumber(fields[6]),
         onlineAt = tonumber(fields[7]),
         timezone = fields[8],
         updated  = tonumber(fields[9]),
+        class    = fields[10] ~= "" and fields[10] or nil,
     }
 
     -- Mark online before UpsertPeer so the status is set when Refresh() runs
-    OW.playerStatus[entry.name] = OW.STATUS_ONLINE
+    OW.playerStatus[entry.name] = OW.STATUS.ONLINE
     local key = entry.name .. "-" .. entry.realm
     OnlineWhen.UpsertPeer(key, entry)
     -- Always refresh after a status change — UpsertPeer skips refresh when the
@@ -262,7 +279,7 @@ function P.HandleBYE(fields)
     if myRealm and fields[4] ~= myRealm then return end
     local name = fields[3]
     if not name or name == "" then return end
-    OW.playerStatus[name] = OW.STATUS_OFFLINE
+    OW.playerStatus[name] = OW.STATUS.OFFLINE
     if OW.TabPlayers and OW.UI and OW.UI.GetCurrentTab and OW.UI.GetCurrentTab() == 2 then
         OW.TabPlayers.Refresh()
     end

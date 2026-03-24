@@ -10,65 +10,85 @@ local TL = OW.TabPlayers
 local sortColumn = "time"
 local sortDir    = "ASC"
 
--- Layout constants
--- Content width = WINDOW_W(740) - INSET*2(12) = 728
--- scrollFrame right offset = 22 (scrollbar sits outside scrollFrame bounds)
--- Full scrollFrame width = 728 - 22 = 706 → use 704 (2px breathing room)
-local CONTENT_W  = 704
-local ROW_HEIGHT = 30
-local MAX_ROWS   = 50   -- pool size; scroll handles visibility
+-- Pagination state
+local currentPage = 1
 
-local COL_X = { status = 0,  name = 20,  role = 165, level = 230, time = 300, actions = 585 }
-local COL_W = { status = 18, name = 140, role = 60,  level = 65,  time = 280, actions = 90  }
+-- Layout constants
+local CONTENT_W      = 788   -- full tab frame width (WINDOW_W 800 - INSET*2 6)
+local ROW_HEIGHT     = 30
+local PAGE_SIZE      = 12   -- entries per page
+local MAX_ROWS       = PAGE_SIZE
+local FILTER_TOP_PAD = 8    -- gap between tab area and filter bar
+local FILTER_H       = 28   -- filter bar height
+local FILTER_BOT_PAD = 8    -- gap between filter bar and column headers
+local ROWS_BOT_PAD   = 6    -- gap below last row before pagination/buttons
+
+local COL_X = { status = 0, name = 22, level = 168, class = 218, spec = 314, time = 420, actions = 672 }
+local COL_W = { status = 18, name = 140, level = 44, class = 90, spec = 100, time = 246, actions = 90  }
 
 local headerBtns   = {}
 local rowPool      = {}
-local scrollFrame  = nil
 local contentFrame = nil
 local refreshBtn   = nil
 local clearBtn     = nil
+local prevPageBtn  = nil
+local nextPageBtn  = nil
+local pageLabel    = nil
 
-local ROLE_ORDER = { Tank = 1, Heal = 2, DPS = 3 }
+-- Filter state (nil = no filter applied)
+local filterLevel  = nil   -- { min=N, max=N } level range, or nil
+local filterSpec   = nil   -- OW.SPEC enum integer (class-qualified)
+local filterStatus = nil   -- OW.STATUS integer
+local filterClass  = nil   -- OW.CLASS integer
+local openDropdown = nil   -- currently visible dropdown popup
+local statusFilterBtn = nil
+local levelFilterBtn  = nil
+local classFilterBtn  = nil
+local specFilterBtn   = nil  -- forward ref; set during Build, read by class filter onChange
 
 -- Colors for dark background
 local WHITE      = { 1.0,  1.0,  1.0,  1.0 }
 local DIM        = { 0.5,  0.5,  0.55, 1.0 }
-local ROLE_COLOR = {
-    Tank = { 0.3, 0.5, 1.0, 1.0 },
-    Heal = { 0.2, 0.9, 0.2, 1.0 },
-    DPS  = { 1.0, 0.3, 0.3, 1.0 },
-}
+
+local CLASS_COLOR = OW.CLASS_COLOR   -- shared from Core/Classes.lua
 
 -- ---------------------------------------------------------------------------
 -- Sorting
 -- ---------------------------------------------------------------------------
 
 -- Display order for status sort: online first, then unknown, then offline
-local STATUS_SORT_ORDER = { [1] = 1, [0] = 2, [2] = 3 }   -- STATUS_ONLINE=1, UNKNOWN=0, OFFLINE=2
+local STATUS_SORT_ORDER = {
+    [OW.STATUS.ONLINE]  = 1,
+    [OW.STATUS.UNKNOWN] = 2,
+    [OW.STATUS.OFFLINE] = 3,
+}
 
 local function sortEntries(entries)
     table.sort(entries, function(a, b)
         if not a or not b then return false end
-        local av, bv
+        local sortValA, sortValB
         if sortColumn == "name" then
-            av = (a.name or ""):lower()
-            bv = (b.name or ""):lower()
-        elseif sortColumn == "role" then
-            av = ROLE_ORDER[a.role] or 99
-            bv = ROLE_ORDER[b.role] or 99
+            sortValA = (a.name or ""):lower()
+            sortValB = (b.name or ""):lower()
+        elseif sortColumn == "spec" then
+            sortValA = (a.spec or ""):lower()
+            sortValB = (b.spec or ""):lower()
         elseif sortColumn == "level" then
-            av = a.level or 0
-            bv = b.level or 0
+            sortValA = a.level or 0
+            sortValB = b.level or 0
+        elseif sortColumn == "class" then
+            sortValA = (a.class or ""):lower()
+            sortValB = (b.class or ""):lower()
         elseif sortColumn == "status" then
-            local sa = OW.GetStatusForEntry and OW.GetStatusForEntry(a.name) or OW.STATUS_UNKNOWN
-            local sb = OW.GetStatusForEntry and OW.GetStatusForEntry(b.name) or OW.STATUS_UNKNOWN
-            av = STATUS_SORT_ORDER[sa] or 2
-            bv = STATUS_SORT_ORDER[sb] or 2
+            local statusA = OW.GetStatusForEntry and OW.GetStatusForEntry(a.name) or OW.STATUS.UNKNOWN
+            local statusB = OW.GetStatusForEntry and OW.GetStatusForEntry(b.name) or OW.STATUS.UNKNOWN
+            sortValA = STATUS_SORT_ORDER[statusA] or 2
+            sortValB = STATUS_SORT_ORDER[statusB] or 2
         else
-            av = a.onlineAt or 0
-            bv = b.onlineAt or 0
+            sortValA = a.onlineAt or 0
+            sortValB = b.onlineAt or 0
         end
-        if sortDir == "ASC" then return av < bv else return av > bv end
+        if sortDir == "ASC" then return sortValA < sortValB else return sortValA > sortValB end
     end)
 end
 
@@ -79,6 +99,7 @@ local function setSort(col)
         sortColumn = col
         sortDir = "ASC"
     end
+    currentPage = 1
     TL.Refresh()
 end
 
@@ -148,8 +169,8 @@ local function updateRows(entries)
     for i, row in ipairs(rowPool) do
         local entry = entries[i]
         if entry then
-            local entryStatus = OW.GetStatusForEntry and OW.GetStatusForEntry(entry.name) or OW.STATUS_UNKNOWN
-            local isPast = entry.onlineAt and entry.onlineAt <= (now - GRACE) and entryStatus ~= OW.STATUS_ONLINE
+            local entryStatus = OW.GetStatusForEntry and OW.GetStatusForEntry(entry.name) or OW.STATUS.UNKNOWN
+            local isPast = entry.onlineAt and entry.onlineAt <= (now - GRACE) and entryStatus ~= OW.STATUS.ONLINE
             local alpha  = isPast and 0.38 or 1.0
 
             local primaryStr, secondaryStr = formatTimes(entry.onlineAt)
@@ -158,10 +179,10 @@ local function updateRows(entries)
             row.name:SetTextColor(1, 1, 1, alpha)
 
             -- Status dot
-            if entryStatus == OW.STATUS_ONLINE then
+            if entryStatus == OW.STATUS.ONLINE then
                 row.statusDot:SetVertexColor(0, 1, 0, 1)
                 row.dotRegion._tip = OW.L.STATUS_ONLINE or "Online"
-            elseif entryStatus == OW.STATUS_OFFLINE then
+            elseif entryStatus == OW.STATUS.OFFLINE then
                 row.statusDot:SetVertexColor(1, 0.27, 0.27, 1)
                 row.dotRegion._tip = OW.L.STATUS_OFFLINE or "Offline"
             else
@@ -169,9 +190,16 @@ local function updateRows(entries)
                 row.dotRegion._tip = OW.L.STATUS_UNKNOWN or "Unknown"
             end
 
-            local rc = ROLE_COLOR[entry.role] or { 0.8, 0.8, 0.8, 1 }
-            row.role:SetTextColor(rc[1], rc[2], rc[3], alpha)
-            row.role:SetText(entry.role or "?")
+            local classColor = entry.class and CLASS_COLOR[entry.class]
+            row.class:SetText(entry.class or "?")
+            if classColor then
+                row.class:SetTextColor(classColor[1], classColor[2], classColor[3], alpha)
+            else
+                row.class:SetTextColor(1, 1, 1, alpha)
+            end
+
+            row.spec:SetText(entry.spec or "?")
+            row.spec:SetTextColor(1, 1, 1, alpha)
 
             row.level:SetText(entry.level and tostring(entry.level) or "?")
             row.level:SetTextColor(1, 1, 1, alpha)
@@ -197,7 +225,7 @@ local function updateRows(entries)
             else
                 row.inviteBtn:Show()
                 local entryName = entry.name
-                local canInvite = (entryStatus == OW.STATUS_ONLINE)
+                local canInvite = (entryStatus == OW.STATUS.ONLINE)
                 row.inviteBtn:SetEnabled(canInvite)
                 if canInvite then
                     row.inviteBtn:SetScript("OnEnter", nil)
@@ -228,10 +256,176 @@ local function updateRows(entries)
         end
     end
 
-    -- Resize content frame so scrollbar range reflects actual entry count
-    if contentFrame then
-        contentFrame:SetHeight(math.max(#entries, 1) * ROW_HEIGHT)
+end
+
+-- ---------------------------------------------------------------------------
+-- Dropdown helper
+-- ---------------------------------------------------------------------------
+
+local dropdownHookSet = false
+
+local function thinBorder(f)
+    local function seg(p1, p2, w, h)
+        local t = f:CreateTexture(nil, "BORDER")
+        t:SetColorTexture(0.3, 0.3, 0.35, 1)
+        t:SetPoint(p1, f, p1, 0, 0)
+        t:SetPoint(p2, f, p2, 0, 0)
+        if w then t:SetWidth(w) else t:SetHeight(h) end
     end
+    seg("TOPLEFT",    "TOPRIGHT",    nil, 1)
+    seg("BOTTOMLEFT", "BOTTOMRIGHT", nil, 1)
+    seg("TOPLEFT",    "BOTTOMLEFT",  1,   nil)
+    seg("TOPRIGHT",   "BOTTOMRIGHT", 1,   nil)
+end
+
+-- choices: array of { label=string, value=any }  (value=nil means "clear filter")
+-- onChange: function(value)
+-- Returns the trigger Button; set its anchor externally.
+-- Supports .setChoices(newChoices, newLabel) and .setActive(bool) for dynamic updates.
+local function makeDropdown(parent, width, defaultText, choices, onChange)
+    if not dropdownHookSet then
+        dropdownHookSet = true
+        WorldFrame:HookScript("OnMouseDown", function()
+            if openDropdown then openDropdown:Hide(); openDropdown = nil end
+        end)
+    end
+
+    -- Trigger button
+    local btn = CreateFrame("Button", nil, parent)
+    btn:SetSize(width, 22)
+    btn._active = true
+
+    local btnBg = btn:CreateTexture(nil, "BACKGROUND")
+    btnBg:SetAllPoints()
+    btnBg:SetColorTexture(0.12, 0.12, 0.14, 1)
+    thinBorder(btn)
+
+    local btnFs = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    btnFs:SetPoint("LEFT",  btn, "LEFT",   6,   0)
+    btnFs:SetPoint("RIGHT", btn, "RIGHT", -16,  0)
+    btnFs:SetJustifyH("LEFT")
+    btnFs:SetTextColor(unpack(WHITE))
+    btnFs:SetText(defaultText)
+
+    local arrowFs = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    arrowFs:SetPoint("RIGHT", btn, "RIGHT", -4, 0)
+    arrowFs:SetJustifyH("RIGHT")
+    arrowFs:SetTextColor(0.55, 0.55, 0.6, 1)
+    arrowFs:SetText("v")
+
+    btn:SetScript("OnEnter", function()
+        if btn._active then btnBg:SetColorTexture(0.18, 0.18, 0.22, 1) end
+    end)
+    btn:SetScript("OnLeave", function()
+        if btn._active then btnBg:SetColorTexture(0.12, 0.12, 0.14, 1) end
+    end)
+
+    -- Popup list
+    local ITEM_H   = 20
+    local popup    = CreateFrame("Frame", nil, UIParent)
+    popup:SetFrameStrata("FULLSCREEN_DIALOG")
+    popup:SetFrameLevel(100)
+    popup:SetWidth(width)
+    popup:SetHeight(1)
+
+    local popBg = popup:CreateTexture(nil, "BACKGROUND")
+    popBg:SetAllPoints()
+    popBg:SetColorTexture(0.09, 0.09, 0.09, 0.97)
+    thinBorder(popup)
+
+    -- Item slot pool — reused across setChoices calls; grows as needed.
+    local itemSlots = {}
+
+    local function getOrCreateSlot(i)
+        if itemSlots[i] then return itemSlots[i] end
+        local item = CreateFrame("Button", nil, popup)
+        item:SetSize(width - 2, ITEM_H)
+
+        local itemBg = item:CreateTexture(nil, "BACKGROUND")
+        itemBg:SetAllPoints()
+        itemBg:SetColorTexture(0.2, 0.4, 0.8, 0)
+        item._bg = itemBg
+
+        local itemFs = item:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        itemFs:SetPoint("LEFT", item, "LEFT", 6, 0)
+        itemFs:SetJustifyH("LEFT")
+        itemFs:SetTextColor(unpack(WHITE))
+        item._fs = itemFs
+
+        item:SetScript("OnEnter", function() itemBg:SetColorTexture(0.2, 0.4, 0.8, 0.35) end)
+        item:SetScript("OnLeave", function() itemBg:SetColorTexture(0.2, 0.4, 0.8, 0)    end)
+
+        itemSlots[i] = item
+        return item
+    end
+
+    local function applyChoices(cs)
+        popup:SetHeight(math.max(1, #cs) * ITEM_H + 6)
+        for i, choice in ipairs(cs) do
+            local item = getOrCreateSlot(i)
+            item:ClearAllPoints()
+            item:SetPoint("TOPLEFT", popup, "TOPLEFT", 1, -(i - 1) * ITEM_H - 3)
+            item._fs:SetText(choice.label)
+            local val = choice.value
+            local lbl = choice.label
+            item:SetScript("OnClick", function()
+                btnFs:SetText(lbl)
+                popup:Hide()
+                openDropdown = nil
+                onChange(val)
+            end)
+            item:Show()
+        end
+        for i = #cs + 1, #itemSlots do
+            itemSlots[i]:Hide()
+        end
+    end
+
+    applyChoices(choices)
+    popup:Hide()
+
+    btn:SetScript("OnClick", function()
+        if not btn._active then return end
+        if openDropdown and openDropdown ~= popup then openDropdown:Hide() end
+        if popup:IsShown() then
+            popup:Hide()
+            openDropdown = nil
+        else
+            popup:ClearAllPoints()
+            popup:SetPoint("TOPLEFT", btn, "BOTTOMLEFT", 0, -2)
+            popup:Show()
+            openDropdown = popup
+        end
+    end)
+
+    btn._fs      = btnFs
+    btn._default = defaultText
+    btn.popup    = popup
+
+    -- Update choices and reset button label. Does NOT call onChange — caller
+    -- is responsible for resetting the associated filter variable before Refresh.
+    btn.setChoices = function(newChoices, newLabel)
+        if openDropdown == popup then popup:Hide(); openDropdown = nil end
+        btnFs:SetText(newLabel or defaultText)
+        applyChoices(newChoices)
+    end
+
+    -- Enable or disable the dropdown (greyed out when inactive).
+    btn.setActive = function(active)
+        btn._active = active
+        if active then
+            btnBg:SetColorTexture(0.12, 0.12, 0.14, 1)
+            btnFs:SetTextColor(1, 1, 1, 1)
+            arrowFs:SetTextColor(0.55, 0.55, 0.6, 1)
+        else
+            if openDropdown == popup then popup:Hide(); openDropdown = nil end
+            btnBg:SetColorTexture(0.08, 0.08, 0.10, 1)
+            btnFs:SetTextColor(0.35, 0.35, 0.4, 1)
+            arrowFs:SetTextColor(0.3, 0.3, 0.35, 1)
+        end
+    end
+
+    return btn
 end
 
 -- ---------------------------------------------------------------------------
@@ -239,9 +433,44 @@ end
 -- ---------------------------------------------------------------------------
 
 function TL.Refresh()
-    local entries = OnlineWhen.GetAllEntries()
-    sortEntries(entries)
-    updateRows(entries)
+    local allEntries = OnlineWhen.GetAllEntries()
+    sortEntries(allEntries)
+
+    -- Apply active filters (AND logic)
+    local entries = {}
+    for _, e in ipairs(allEntries) do
+        local ok = true
+        if filterLevel then
+            local lvl = e.level or 0
+            if lvl < filterLevel.min or lvl > filterLevel.max then ok = false end
+        end
+        if ok and filterStatus then
+            local st = OW.GetStatusForEntry and OW.GetStatusForEntry(e.name) or OW.STATUS.UNKNOWN
+            if st ~= filterStatus then ok = false end
+        end
+        if ok and filterClass and (OW.CLASS_ID[e.class] or 0) ~= filterClass then ok = false end
+        if ok and filterSpec then
+            local sid = e.class and e.spec and OW.SPEC_ID[e.class] and OW.SPEC_ID[e.class][e.spec]
+            if sid ~= filterSpec then ok = false end
+        end
+        if ok then entries[#entries + 1] = e end
+    end
+
+    local total      = #entries
+    local totalPages = math.max(1, math.ceil(total / PAGE_SIZE))
+    if currentPage > totalPages then currentPage = totalPages end
+
+    local startIdx    = (currentPage - 1) * PAGE_SIZE + 1
+    local pageEntries = {}
+    for i = startIdx, math.min(startIdx + PAGE_SIZE - 1, total) do
+        pageEntries[#pageEntries + 1] = entries[i]
+    end
+
+    updateRows(pageEntries)
+
+    if pageLabel    then pageLabel:SetText("Page " .. currentPage .. " of " .. totalPages) end
+    if prevPageBtn  then prevPageBtn:SetEnabled(currentPage > 1) end
+    if nextPageBtn  then nextPageBtn:SetEnabled(currentPage < totalPages) end
 
     local L = OW.L
     if headerBtns.status then
@@ -250,11 +479,14 @@ function TL.Refresh()
     if headerBtns.name then
         headerBtns.name:SetText((L.COL_NAME or "Character Name") .. arrowFor("name"))
     end
-    if headerBtns.role then
-        headerBtns.role:SetText((L.COL_ROLE or "Role") .. arrowFor("role"))
+    if headerBtns.spec then
+        headerBtns.spec:SetText((L.COL_SPEC or "Spec") .. arrowFor("spec"))
     end
     if headerBtns.level then
         headerBtns.level:SetText((L.COL_LEVEL or "Level") .. arrowFor("level"))
+    end
+    if headerBtns.class then
+        headerBtns.class:SetText("Class" .. arrowFor("class"))
     end
     if headerBtns.time then
         headerBtns.time:SetText((L.COL_TIME or "Online At") .. arrowFor("time"))
@@ -267,12 +499,123 @@ end
 
 function TL.Build(parent)
     local L = OW.L
-    local headerY = -4
+
+    -- columnHeaderY: top of column headers, pushed down to make room for the filter bar
+    local columnHeaderY = -(FILTER_TOP_PAD + FILTER_H + FILTER_BOT_PAD)   -- = -44
+
+    -- ---- Filter bar ----
+    local filterBarY = -(FILTER_TOP_PAD + math.floor((FILTER_H - 22) / 2))  -- vertically centre 22px buttons in bar = -11
+
+    -- Filter order: Status | Level | Class | Spec                [Reset →]
+    statusFilterBtn = makeDropdown(parent, 120, "Any Status", {
+        { label = "Any Status", value = nil                },
+        { label = "Online",     value = OW.STATUS.ONLINE   },
+        { label = "Offline",    value = OW.STATUS.OFFLINE  },
+        { label = "Unknown",    value = OW.STATUS.UNKNOWN  },
+    }, function(val)
+        filterStatus = val ; currentPage = 1 ; TL.Refresh()
+    end)
+    statusFilterBtn:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, filterBarY)
+
+    local levelChoices = {
+        { label = "Any Level", value = nil },
+        { label = "1-9",       value = { min =  1, max =  9 } },
+        { label = "10-19",     value = { min = 10, max = 19 } },
+        { label = "20-29",     value = { min = 20, max = 29 } },
+        { label = "30-39",     value = { min = 30, max = 39 } },
+        { label = "40-49",     value = { min = 40, max = 49 } },
+        { label = "50-59",     value = { min = 50, max = 59 } },
+        { label = "60-69",     value = { min = 60, max = 69 } },
+        { label = "70",        value = { min = 70, max = 70 } },
+    }
+    levelFilterBtn = makeDropdown(parent, 148, "Any Level", levelChoices, function(val)
+        filterLevel = val ; currentPage = 1 ; TL.Refresh()
+    end)
+    levelFilterBtn:SetPoint("TOPLEFT", parent, "TOPLEFT", 130, filterBarY)
+
+    classFilterBtn = makeDropdown(parent, 130, "Any Class", {
+        { label = "Any Class", value = nil                  },
+        { label = "Druid",     value = OW.CLASS.DRUID       },
+        { label = "Hunter",    value = OW.CLASS.HUNTER      },
+        { label = "Mage",      value = OW.CLASS.MAGE        },
+        { label = "Paladin",   value = OW.CLASS.PALADIN     },
+        { label = "Priest",    value = OW.CLASS.PRIEST      },
+        { label = "Rogue",     value = OW.CLASS.ROGUE       },
+        { label = "Shaman",    value = OW.CLASS.SHAMAN      },
+        { label = "Warlock",   value = OW.CLASS.WARLOCK     },
+        { label = "Warrior",   value = OW.CLASS.WARRIOR     },
+    }, function(val)
+        filterClass = val
+        filterSpec  = nil
+        currentPage = 1
+        if specFilterBtn then
+            if val == nil then
+                specFilterBtn.setChoices({ { label = "Any Spec", value = nil } }, "Any Spec")
+                specFilterBtn.setActive(false)
+            else
+                local className = OW.CLASS_NAME[val]
+                local specs     = OW.CLASS_SPECS and className and OW.CLASS_SPECS[className]
+                local specChoices = { { label = "Any Spec", value = nil } }
+                if specs then
+                    for _, sp in ipairs(specs) do
+                        specChoices[#specChoices + 1] = { label = sp.label, value = sp.id }
+                    end
+                end
+                specFilterBtn.setChoices(specChoices, "Any Spec")
+                specFilterBtn.setActive(true)
+            end
+        end
+        TL.Refresh()
+    end)
+    classFilterBtn:SetPoint("TOPLEFT", parent, "TOPLEFT", 288, filterBarY)
+
+    -- Spec filter — starts inactive; enabled when a class is selected above.
+    specFilterBtn = makeDropdown(parent, 130, "Any Spec",
+        { { label = "Any Spec", value = nil } },
+        function(val)
+            filterSpec = val ; currentPage = 1 ; TL.Refresh()
+        end)
+    specFilterBtn:SetPoint("TOPLEFT", parent, "TOPLEFT", 428, filterBarY)
+    specFilterBtn.setActive(false)
+
+    -- Reset Filters button — right-aligned in the filter bar, same visual style as dropdowns.
+    local resetBtn = CreateFrame("Button", nil, parent)
+    resetBtn:SetSize(90, 22)
+    resetBtn:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, filterBarY)
+
+    local resetBg = resetBtn:CreateTexture(nil, "BACKGROUND")
+    resetBg:SetAllPoints()
+    resetBg:SetColorTexture(0.12, 0.12, 0.14, 1)
+    thinBorder(resetBtn)
+
+    local resetFs = resetBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    resetFs:SetAllPoints()
+    resetFs:SetJustifyH("CENTER")
+    resetFs:SetTextColor(unpack(WHITE))
+    resetFs:SetText("Reset Filters")
+
+    resetBtn:SetScript("OnEnter", function() resetBg:SetColorTexture(0.18, 0.18, 0.22, 1) end)
+    resetBtn:SetScript("OnLeave", function() resetBg:SetColorTexture(0.12, 0.12, 0.14, 1) end)
+    resetBtn:SetScript("OnClick", function()
+        filterStatus = nil
+        filterLevel  = nil
+        filterClass  = nil
+        filterSpec   = nil
+        currentPage  = 1
+        if statusFilterBtn then statusFilterBtn._fs:SetText(statusFilterBtn._default) end
+        if levelFilterBtn  then levelFilterBtn._fs:SetText(levelFilterBtn._default)   end
+        if classFilterBtn  then classFilterBtn._fs:SetText(classFilterBtn._default)   end
+        if specFilterBtn   then
+            specFilterBtn.setChoices({ { label = "Any Spec", value = nil } }, "Any Spec")
+            specFilterBtn.setActive(false)
+        end
+        TL.Refresh()
+    end)
 
     -- ---- Column headers ----
     local function makeHeader(col, defaultLabel, px, pw)
         local btn = CreateFrame("Button", nil, parent)
-        btn:SetPoint("TOPLEFT", parent, "TOPLEFT", px, headerY)
+        btn:SetPoint("TOPLEFT", parent, "TOPLEFT", px, columnHeaderY)
         btn:SetSize(pw, 20)
         btn:SetNormalFontObject("GameFontNormal")
         btn:SetHighlightFontObject("GameFontHighlight")
@@ -300,13 +643,14 @@ function TL.Build(parent)
     headerBtns["status"]:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     makeHeader("name",  (L.COL_NAME  or "Character Name") .. " ^", COL_X.name,  COL_W.name)
-    makeHeader("role",  L.COL_ROLE  or "Role",                    COL_X.role,  COL_W.role)
     makeHeader("level", L.COL_LEVEL or "Level",                   COL_X.level, COL_W.level)
+    makeHeader("class", "Class",                                   COL_X.class, COL_W.class)
+    makeHeader("spec",  L.COL_SPEC  or "Spec",                    COL_X.spec,  COL_W.spec)
     makeHeader("time",  L.COL_TIME  or "Online At",               COL_X.time,  COL_W.time)
 
     -- Non-sortable "Actions" header (plain FontString, no click handler)
     local actionsHdr = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    actionsHdr:SetPoint("TOPLEFT", parent, "TOPLEFT", COL_X.actions, headerY)
+    actionsHdr:SetPoint("TOPLEFT", parent, "TOPLEFT", COL_X.actions, columnHeaderY)
     actionsHdr:SetSize(COL_W.actions, 20)
     actionsHdr:SetJustifyH("CENTER")
     actionsHdr:SetText(L.COL_ACTIONS or "Actions")
@@ -320,21 +664,14 @@ function TL.Build(parent)
 
     local divider = parent:CreateTexture(nil, "ARTWORK")
     divider:SetColorTexture(0.25, 0.25, 0.3, 1)
-    divider:SetPoint("TOPLEFT",  parent, "TOPLEFT",  0, headerY - 20)
-    divider:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, headerY - 20)
+    divider:SetPoint("TOPLEFT",  parent, "TOPLEFT",  0, columnHeaderY - 20)
+    divider:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, columnHeaderY - 20)
     divider:SetHeight(1)
 
-    -- ---- Scroll frame ----
-    scrollFrame = CreateFrame("ScrollFrame", "OnlineWhenScrollFrame", parent,
-                              "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT",     parent, "TOPLEFT",     0,   headerY - 22)
-    scrollFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -22, 34)
-
-    -- Content frame: fixed width so rows are always correctly sized
-    contentFrame = CreateFrame("Frame", nil, scrollFrame)
-    contentFrame:SetWidth(CONTENT_W)
-    contentFrame:SetHeight(ROW_HEIGHT)   -- grows dynamically in updateRows
-    scrollFrame:SetScrollChild(contentFrame)
+    -- ---- Content frame (fixed size — rows sit flush against pagination) ----
+    contentFrame = CreateFrame("Frame", nil, parent)
+    contentFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, columnHeaderY - 22)
+    contentFrame:SetSize(CONTENT_W, PAGE_SIZE * ROW_HEIGHT)
 
     -- ---- Row pool (MAX_ROWS pre-created; only entries-count shown) ----
     for i = 1, MAX_ROWS do
@@ -354,18 +691,26 @@ function TL.Build(parent)
         nameFs:SetJustifyH("LEFT")
         nameFs:SetTextColor(unpack(WHITE))
 
-        -- Role (vertically centred)
-        local roleFs = rowFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        roleFs:SetPoint("LEFT", rowFrame, "LEFT", COL_X.role, 0)
-        roleFs:SetWidth(COL_W.role)
-        roleFs:SetJustifyH("LEFT")
-
         -- Level (vertically centred)
         local levelFs = rowFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         levelFs:SetPoint("LEFT", rowFrame, "LEFT", COL_X.level, 0)
         levelFs:SetWidth(COL_W.level)
         levelFs:SetJustifyH("LEFT")
         levelFs:SetTextColor(unpack(WHITE))
+
+        -- Class (vertically centred)
+        local classFs = rowFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        classFs:SetPoint("LEFT", rowFrame, "LEFT", COL_X.class, 0)
+        classFs:SetWidth(COL_W.class)
+        classFs:SetJustifyH("LEFT")
+        classFs:SetTextColor(unpack(WHITE))
+
+        -- Spec (vertically centred)
+        local specFs = rowFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        specFs:SetPoint("LEFT", rowFrame, "LEFT", COL_X.spec, 0)
+        specFs:SetWidth(COL_W.spec)
+        specFs:SetJustifyH("LEFT")
+        specFs:SetTextColor(unpack(WHITE))
 
         -- Server time / UTC (top line of time cell)
         local timePrimary = rowFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -413,8 +758,9 @@ function TL.Build(parent)
             statusDot     = statusDot,
             dotRegion     = dotRegion,
             name          = nameFs,
-            role          = roleFs,
             level         = levelFs,
+            class         = classFs,
+            spec          = specFs,
             timePrimary   = timePrimary,
             timeSecondary = timeSecondary,
             inviteBtn     = inviteBtn,
@@ -422,10 +768,37 @@ function TL.Build(parent)
         rowFrame:Hide()
     end
 
+    -- ---- Pagination controls (bottom-center, fixed to frame bottom) ----
+    local paginationBottomPad = 12   -- padding between buttons and frame bottom edge
+
+    prevPageBtn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    prevPageBtn:SetSize(28, 22)
+    prevPageBtn:SetPoint("BOTTOMRIGHT", parent, "BOTTOM", -60, paginationBottomPad)
+    prevPageBtn:SetText("<")
+    prevPageBtn:SetScript("OnClick", function()
+        currentPage = currentPage - 1
+        TL.Refresh()
+    end)
+
+    pageLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    pageLabel:SetPoint("BOTTOM", parent, "BOTTOM", 0, paginationBottomPad + 4)
+    pageLabel:SetWidth(110)
+    pageLabel:SetJustifyH("CENTER")
+    pageLabel:SetText("Page 1 of 1")
+
+    nextPageBtn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    nextPageBtn:SetSize(28, 22)
+    nextPageBtn:SetPoint("BOTTOMLEFT", parent, "BOTTOM", 60, paginationBottomPad)
+    nextPageBtn:SetText(">")
+    nextPageBtn:SetScript("OnClick", function()
+        currentPage = currentPage + 1
+        TL.Refresh()
+    end)
+
     -- ---- Bottom buttons ----
     refreshBtn = CreateFrame("Button", nil, parent, "GameMenuButtonTemplate")
     refreshBtn:SetSize(100, 26)
-    refreshBtn:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -4, 4)
+    refreshBtn:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -4, paginationBottomPad)
     refreshBtn:SetText(L.BTN_REFRESH or "Refresh")
     refreshBtn:SetScript("OnClick", function()
         OW.PurgeExpiredPeers()

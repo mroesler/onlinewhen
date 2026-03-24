@@ -53,10 +53,19 @@ function OW.OnLogin()
 
     OW.PurgeStalePeers()
 
+    -- Restore persisted status for entries that carry one (e.g. test data).
+    -- Real network peers never have a status field in their entry, so they
+    -- remain UNKNOWN until the network syncs — this is intentional.
+    for _, peer in pairs(OnlineWhenDB.peers) do
+        if peer.status ~= nil and peer.name then
+            OW.playerStatus[peer.name] = peer.status
+        end
+    end
+
     -- Mark self as online immediately
     local myName = UnitName("player")
     if myName and OW.playerStatus then
-        OW.playerStatus[myName] = OW.STATUS_ONLINE
+        OW.playerStatus[myName] = OW.STATUS.ONLINE
     end
 
     if OW.UI then

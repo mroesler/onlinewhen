@@ -8,7 +8,7 @@ OW.L = {
     -- Schedule tab
     LABEL_NAME      = "Character Name",
     LABEL_LEVEL     = "Level",
-    LABEL_ROLE      = "Role",
+    LABEL_SPEC      = "Spec",
     LABEL_DATE      = "Date",
     LABEL_TIME      = "Time",
     LABEL_TIMEZONE  = "Timezone",
@@ -16,11 +16,11 @@ OW.L = {
     BTN_SAVED       = "Saved!",
     TZ_NOTE         = "Pick the time in your timezone — it will be converted to Server Time automatically.",
     ERR_NO_NAME     = "Enter a character name.",
-    ERR_NO_ROLE     = "Select a role.",
+    ERR_NO_SPEC     = "Select a spec.",
 
     -- Players tab
     COL_NAME        = "Character Name",
-    COL_ROLE        = "Role",
+    COL_SPEC        = "Spec",
     COL_LEVEL       = "Lvl",
     COL_TIME        = "Online At",
     COL_ACTIONS     = "Actions",

@@ -17,11 +17,12 @@ function OW.GetMyEntry()
 end
 
 -- Save the player's own schedule entry and broadcast it to peers.
-function OW.SaveMyEntry(name, role, level, onlineAt, tzId)
+function OW.SaveMyEntry(name, spec, class, level, onlineAt, tzId)
     OnlineWhenDB.myEntry = {
         name     = name,
         realm    = OnlineWhenDB.settings.realm or GetRealmName(),
-        role     = role,
+        spec     = spec,
+        class    = class,
         level    = level,
         onlineAt = onlineAt,
         timezone = tzId,
@@ -49,9 +50,9 @@ end
 
 -- Remove peers whose record is older than 14 days.
 function OW.PurgeStalePeers()
-    local cutoff = time() - (14 * 24 * 60 * 60)
+    local staleCutoff = time() - (14 * 24 * 60 * 60)
     for key, peer in pairs(OnlineWhenDB.peers) do
-        if peer.updated and peer.updated < cutoff then
+        if peer.updated and peer.updated < staleCutoff then
             OnlineWhenDB.peers[key] = nil
         end
     end
@@ -60,20 +61,20 @@ end
 -- Remove entries whose scheduled time is more than 30 minutes in the past,
 -- unless the player is currently online (in which case keep them regardless).
 function OW.PurgeExpiredPeers()
-    local GRACE = 30 * 60   -- 30-minute grace period
-    local now   = time()
+    local gracePeriodSecs = 30 * 60   -- 30-minute grace period
+    local now             = time()
     for key, peer in pairs(OnlineWhenDB.peers) do
-        if peer.onlineAt and peer.onlineAt < (now - GRACE) then
-            local status = OW.GetStatusForEntry and OW.GetStatusForEntry(peer.name) or OW.STATUS_UNKNOWN
-            if status ~= OW.STATUS_ONLINE then
+        if peer.onlineAt and peer.onlineAt < (now - gracePeriodSecs) then
+            local status = OW.GetStatusForEntry and OW.GetStatusForEntry(peer.name) or OW.STATUS.UNKNOWN
+            if status ~= OW.STATUS.ONLINE then
                 OnlineWhenDB.peers[key] = nil
             end
         end
     end
-    local my = OnlineWhenDB.myEntry
-    if my and my.onlineAt and my.onlineAt < (now - GRACE) then
-        local status = OW.GetStatusForEntry and OW.GetStatusForEntry(my.name) or OW.STATUS_UNKNOWN
-        if status ~= OW.STATUS_ONLINE then
+    local myEntry = OnlineWhenDB.myEntry
+    if myEntry and myEntry.onlineAt and myEntry.onlineAt < (now - gracePeriodSecs) then
+        local status = OW.GetStatusForEntry and OW.GetStatusForEntry(myEntry.name) or OW.STATUS.UNKNOWN
+        if status ~= OW.STATUS.ONLINE then
             OnlineWhenDB.myEntry = nil
         end
     end
@@ -83,9 +84,9 @@ end
 function OW.GetAllEntries()
     local realm  = OnlineWhenDB.settings.realm
     local result = {}
-    local my = OnlineWhenDB.myEntry
-    if my and (not realm or my.realm == realm) then
-        table.insert(result, my)
+    local myEntry = OnlineWhenDB.myEntry
+    if myEntry and (not realm or myEntry.realm == realm) then
+        table.insert(result, myEntry)
     end
     for _, peer in pairs(OnlineWhenDB.peers) do
         if not realm or peer.realm == realm then

@@ -4,14 +4,13 @@
 
 local addonName, OW = ...
 
--- Status constants
-OW.STATUS_UNKNOWN = 0
-OW.STATUS_ONLINE  = 1
-OW.STATUS_OFFLINE = 2
+OW.STATUS = setmetatable({ ONLINE = 1, OFFLINE = 2, UNKNOWN = 0 }, {
+    __index    = function(_, k) error("OW.STATUS: unknown key: " .. tostring(k), 2) end,
+    __newindex = function()     error("OW.STATUS: is read-only", 2) end,
+})
 
-OW.playerStatus = {}   -- ["PlayerName"] = STATUS_ONLINE | STATUS_OFFLINE
+OW.playerStatus = {}   -- ["PlayerName"] = OW.STATUS.ONLINE | .OFFLINE
 
--- Return the known status for a player name, or STATUS_UNKNOWN if not yet seen.
 function OW.GetStatusForEntry(name)
-    return OW.playerStatus[name] or OW.STATUS_UNKNOWN
+    return OW.playerStatus[name] or OW.STATUS.UNKNOWN
 end

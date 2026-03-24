@@ -4,7 +4,7 @@ local addonName, OW = ...
 OW.UI = {}
 local UI = OW.UI
 
-local WINDOW_W  = 740
+local WINDOW_W  = 800
 local WINDOW_H  = 520
 local TAB_COUNT = 2
 local TAB_H     = 32   -- height of the integrated tab header strip
@@ -66,16 +66,16 @@ end
 
 local function updateTabVisuals()
     for i = 1, TAB_COUNT do
-        local b = tabBtns[i]
-        if b then
+        local tabBtn = tabBtns[i]
+        if tabBtn then
             if i == currentTab then
-                b.bg:SetColorTexture(unpack(C.tabActive))
-                b.line:Show()
-                b.label:SetTextColor(unpack(C.txtActive))
+                tabBtn.bg:SetColorTexture(unpack(C.tabActive))
+                tabBtn.line:Show()
+                tabBtn.label:SetTextColor(unpack(C.txtActive))
             else
-                b.bg:SetColorTexture(unpack(C.tabInactive))
-                b.line:Hide()
-                b.label:SetTextColor(unpack(C.txtInactive))
+                tabBtn.bg:SetColorTexture(unpack(C.tabInactive))
+                tabBtn.line:Hide()
+                tabBtn.label:SetTextColor(unpack(C.txtInactive))
             end
         end
     end
@@ -111,13 +111,13 @@ function UI.CreateMainWindow()
     addBorders(mainFrame, unpack(C.border))
 
     -- ---- Integrated tab header strip ----
-    local tabW = math.floor((WINDOW_W - INSET * 2) / 2)
+    local tabWidth = math.floor((WINDOW_W - INSET * 2) / 2)
     local tabLabels = { OW.L.TAB_SCHEDULE or "Schedule", OW.L.TAB_PLAYERS or "Player List" }
 
     for i = 1, TAB_COUNT do
         local btn = CreateFrame("Button", "OWTab" .. i, mainFrame)
-        btn:SetSize(tabW, TAB_H)
-        btn:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", INSET + (i - 1) * tabW, -INSET)
+        btn:SetSize(tabWidth, TAB_H)
+        btn:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", INSET + (i - 1) * tabWidth, -INSET)
 
         -- Tab background
         local bgTex = solidTex(btn, "BACKGROUND", unpack(C.tabInactive))
@@ -146,16 +146,16 @@ function UI.CreateMainWindow()
     end
 
     -- Vertical divider between tabs
-    local vDiv = solidTex(mainFrame, "ARTWORK", unpack(C.tabSep))
-    vDiv:SetWidth(1)
-    vDiv:SetPoint("TOPLEFT",    mainFrame, "TOPLEFT", INSET + tabW, -INSET)
-    vDiv:SetHeight(TAB_H)
+    local tabVerticalDivider = solidTex(mainFrame, "ARTWORK", unpack(C.tabSep))
+    tabVerticalDivider:SetWidth(1)
+    tabVerticalDivider:SetPoint("TOPLEFT",    mainFrame, "TOPLEFT", INSET + tabWidth, -INSET)
+    tabVerticalDivider:SetHeight(TAB_H)
 
     -- Horizontal divider below tab strip
-    local hDiv = solidTex(mainFrame, "ARTWORK", unpack(C.divider))
-    hDiv:SetHeight(1)
-    hDiv:SetPoint("TOPLEFT",  mainFrame, "TOPLEFT",  INSET, -(INSET + TAB_H))
-    hDiv:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", -INSET, -(INSET + TAB_H))
+    local tabHorizontalDivider = solidTex(mainFrame, "ARTWORK", unpack(C.divider))
+    tabHorizontalDivider:SetHeight(1)
+    tabHorizontalDivider:SetPoint("TOPLEFT",  mainFrame, "TOPLEFT",  INSET, -(INSET + TAB_H))
+    tabHorizontalDivider:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", -INSET, -(INSET + TAB_H))
 
     -- Close button (top-right, above tab strip)
     local closeBtn = CreateFrame("Button", nil, mainFrame, "UIPanelCloseButton")
@@ -167,11 +167,11 @@ function UI.CreateMainWindow()
     -- ---- Content frames (one per tab) ----
     local contentTopY = -(INSET + TAB_H + 4)
     for i = 1, TAB_COUNT do
-        local f = CreateFrame("Frame", nil, mainFrame)
-        f:SetPoint("TOPLEFT",     mainFrame, "TOPLEFT",     INSET,  contentTopY)
-        f:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -INSET, INSET)
-        f:Hide()
-        tabFrames[i] = f
+        local tabContentFrame = CreateFrame("Frame", nil, mainFrame)
+        tabContentFrame:SetPoint("TOPLEFT",     mainFrame, "TOPLEFT",     INSET,  contentTopY)
+        tabContentFrame:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -INSET, INSET)
+        tabContentFrame:Hide()
+        tabFrames[i] = tabContentFrame
     end
 
     if OW.TabSchedule then OW.TabSchedule.Build(tabFrames[1]) end
