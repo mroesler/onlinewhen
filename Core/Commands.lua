@@ -66,7 +66,16 @@ function OW.PrintDebug()
         print(string.format("    level    = %s", tostring(myEntry.level)))
         print(string.format("    onlineAt = %d", myEntry.onlineAt or 0))
         print(string.format("    timezone = %s", tostring(myEntry.timezone)))
-        print(string.format("    updated  = %d", myEntry.updated or 0))
+        print(string.format("    updated          = %d", myEntry.updated or 0))
+        print(string.format("    primaryActivity  = %s", tostring(myEntry.primaryActivity)))
+        print(string.format("    exactActivity    = %s", tostring(myEntry.exactActivity)))
+        if OW.Protocol and OW.Protocol.SerializeANN then
+            local wire = OW.Protocol.SerializeANN(myEntry)
+            local fieldCount = 0
+            for _ in (wire .. ";"):gmatch("([^;]*);") do fieldCount = fieldCount + 1 end
+            print(string.format("  SerializeANN => %s", wire))
+            print(string.format("  SerializeANN field count => %d (expect 12)", fieldCount))
+        end
         print("  }")
     else
         print("  myEntry = (none)")
