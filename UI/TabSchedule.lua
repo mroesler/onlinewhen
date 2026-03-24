@@ -256,6 +256,10 @@ local function onSave()
     selectedSpec = ddSpec and ddSpec:GetValue()
     if not selectedSpec then showError(OW.L.ERR_NO_SPEC or "Select a spec.") return end
 
+    selectedActivity = ddActivity and ddActivity:GetValue()
+    if not selectedActivity then showError("Select an activity.") return end
+    local exactActivity = ddExactActivity and ddExactActivity:GetValue()
+
     local day    = ddDay   and ddDay:GetValue()
     local month  = ddMonth and ddMonth:GetValue()
     local year   = ddYear  and ddYear:GetValue()
@@ -272,7 +276,8 @@ local function onSave()
     local level = UnitLevel("player") or 1
     local _, cToken = UnitClass("player")
     local myClass   = (cToken and OW.CLASS_TOKEN_NAME and OW.CLASS_TOKEN_NAME[cToken]) or ""
-    OnlineWhen.SaveMyEntry(name, selectedSpec, myClass, level, utcTs, selectedTzId)
+    OnlineWhen.SaveMyEntry(name, selectedSpec, myClass, level, utcTs, selectedTzId,
+        selectedActivity, exactActivity)
 
     saveBtn:SetText(OW.L.BTN_SAVED or "Saved!")
     C_Timer.After(1.5, function()
