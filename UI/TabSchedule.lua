@@ -13,6 +13,9 @@ local nameBox  = nil
 local levelBox = nil
 local saveBtn  = nil
 local ddSpec, ddDay, ddMonth, ddYear, ddHour, ddMin, ddTz
+local ddActivity, ddExactActivity
+local lblExactActivity
+local selectedActivity = nil
 
 local MONTH_NAMES = {
     "January","February","March","April","May","June",
@@ -215,6 +218,23 @@ local function tzItems()
     local items = {}
     for _, tz in ipairs(OW.Timezones) do
         items[#items+1] = { value = tz.id, label = tz.label }
+    end
+    return items
+end
+
+local function activityItems()
+    local items = {}
+    for _, act in ipairs(OW.ACTIVITY_LIST) do
+        items[#items+1] = { value = act.label, label = act.label }
+    end
+    return items
+end
+
+local function exactItemsForActivity(activityLabel)
+    local subs = OW.ACTIVITY_SUBS and OW.ACTIVITY_SUBS[activityLabel] or {}
+    local items = {}
+    for _, sub in ipairs(subs) do
+        items[#items+1] = { value = sub, label = sub }
     end
     return items
 end
@@ -466,6 +486,50 @@ function TI.Build(parent)
     note:SetPoint("TOPLEFT", dateTimeGroup, "TOPLEFT", contentLeft, curY)
     note:SetText(L.TZ_NOTE or "Pick the time in your timezone — it will be converted to Server Time automatically.")
     note:SetTextColor(unpack(DIM))
+
+    -- ============================================================
+    -- GROUP 3 — Activity
+    -- ============================================================
+    local activityGroupHeight = 152
+    local activityGroupY = dateTimeGroupY - dateTimeGroupHeight - 8
+
+    local activityGroup = makeGroupBox(parent, "Activity", groupMargin, activityGroupY, groupWidth, activityGroupHeight)
+
+    curY = CONTENT_Y
+
+    -- Primary activity row
+    lbl(activityGroup, "Activity", contentLeft, curY)
+    curY = curY - 20
+
+    ddActivity = makeDropdown(activityGroup, "OWDdActivity", activityItems(), nil,
+        contentLeft, curY, 200,
+        function(v)
+            selectedActivity = v
+            local subs = OW.ACTIVITY_SUBS and OW.ACTIVITY_SUBS[v] or {}
+            if #subs > 0 then
+                ddExactActivity:ClearValue()
+                ddExactActivity:SetItems(exactItemsForActivity(v))
+                lblExactActivity:Show()
+                ddExactActivity:Show()
+            else
+                ddExactActivity:ClearValue()
+                lblExactActivity:Hide()
+                ddExactActivity:Hide()
+            end
+        end,
+        "— Select —")
+    curY = curY - 36
+
+    -- Exact activity row (hidden by default per D-03)
+    lblExactActivity = lbl(activityGroup, "Specific Activity", contentLeft, curY)
+    curY = curY - 20
+
+    ddExactActivity = makeDropdown(activityGroup, "OWDdExactActivity", {}, nil,
+        contentLeft, curY, 200, nil, "— Select —")
+
+    -- Hide exact row on creation (widgets are visible by default)
+    lblExactActivity:Hide()
+    ddExactActivity:Hide()
 
     -- ============================================================
     -- SAVE BUTTON — centered horizontally, equal spacing to Group 2 bottom and frame bottom.
