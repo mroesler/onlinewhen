@@ -5,7 +5,7 @@ OW.UI = {}
 local UI = OW.UI
 
 local WINDOW_W  = 800
-local WINDOW_H  = 520
+local WINDOW_H  = 680
 local TAB_COUNT = 2
 local TAB_H     = 32   -- height of the integrated tab header strip
 local INSET     = 6    -- interior inset from frame edge

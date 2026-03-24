@@ -355,12 +355,13 @@ function TI.Build(parent)
     local saveButtonHeight  = 28
     local saveButtonPadding = 14   -- equal gap: G2-bottom→button-top and button-bottom→frame-bottom
 
-    -- contentAreaHeight = tab frame height: 520 window − 32 tab − 6 top inset − 6 bottom inset − 4 gap = 472
-    local contentAreaHeight = 472
+    -- contentAreaHeight = tab frame height: 680 window − 32 tab − 6 top inset − 6 bottom inset − 4 gap = 632
+    local contentAreaHeight = 632
 
-    -- Group 2 fills all remaining space so saveButtonPadding is equal on both sides of the button
+    -- Group 2 fills remaining space so saveButtonPadding is equal on both sides of the button
     --   dateTimeGroupTopAbs = groupMargin + charGroupHeight + 8 = 6 + 90 + 8 = 104
-    --   dateTimeGroupHeight = contentAreaHeight − dateTimeGroupTopAbs − (saveButtonPadding + saveButtonHeight + saveButtonPadding) = 472 − 104 − 56 = 312
+    --   Bottom space with Activity group: activityGroupHeight(152) + gap(8) + saveButtonPadding(14) + saveButtonHeight(28) + saveButtonPadding(14) = 216
+    --   dateTimeGroupHeight = contentAreaHeight − dateTimeGroupTopAbs − bottomSpace = 632 − 104 − 216 = 312
     local dateTimeGroupHeight = 312
 
     -- Group box width = parent width minus 2×side margin (6px each side)
