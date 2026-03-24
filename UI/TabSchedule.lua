@@ -312,6 +312,13 @@ function TI.Reset()
 
     selectedTzId = OW.DEFAULT_TIMEZONE or "Europe/Berlin"
     if ddTz then ddTz:SetValue(selectedTzId) end
+
+    -- Activity reset (per D-07)
+    if ddActivity      then ddActivity:ClearValue()      end
+    if ddExactActivity then ddExactActivity:ClearValue()  end
+    if lblExactActivity then lblExactActivity:Hide()      end
+    if ddExactActivity  then ddExactActivity:Hide()       end
+    selectedActivity = nil
 end
 
 -- ---------------------------------------------------------------------------
@@ -564,5 +571,21 @@ function TI.Populate()
         if ddYear  then ddYear:SetValue(tonumber(date("!%Y", localTs)))  end
         if ddHour  then ddHour:SetValue(tonumber(date("!%H", localTs)))  end
         if ddMin   then ddMin:SetValue(math.floor(tonumber(date("!%M", localTs)) / 5) * 5) end
+    end
+
+    -- Activity restore (per D-08)
+    if ddActivity and my.primaryActivity then
+        ddActivity:SetValue(my.primaryActivity)
+        selectedActivity = my.primaryActivity
+        local subs = OW.ACTIVITY_SUBS and OW.ACTIVITY_SUBS[my.primaryActivity] or {}
+        if #subs > 0 then
+            ddExactActivity:SetItems(exactItemsForActivity(my.primaryActivity))
+            if my.exactActivity then ddExactActivity:SetValue(my.exactActivity) end
+            if lblExactActivity then lblExactActivity:Show() end
+            ddExactActivity:Show()
+        else
+            if lblExactActivity then lblExactActivity:Hide() end
+            ddExactActivity:Hide()
+        end
     end
 end
