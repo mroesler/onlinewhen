@@ -116,7 +116,7 @@ end
 -- Serialization
 -- ---------------------------------------------------------------------------
 -- Wire format: VERSION;TYPE;field1;field2;...  (semicolon — pipe is WoW's color escape)
--- ANN: 1;ANN;Name;Realm;Spec;Level;OnlineAtUTC;TzId;UpdatedUTC;Class
+-- ANN: 1;ANN;Name;Realm;Spec;Level;OnlineAtUTC;TzId;UpdatedUTC;Class;PrimaryActivity;ExactActivity
 -- REQ: 1;REQ;Name;Realm
 -- BYE: 1;BYE;Name;Realm
 
@@ -134,6 +134,8 @@ function P.SerializeANN(entry)
         entry.timezone or "UTC",
         tostring(entry.updated  or 0),
         entry.class    or "",
+        entry.primaryActivity or "",
+        entry.exactActivity   or "",
     }, SEP)
 end
 
@@ -147,7 +149,7 @@ end
 
 local function split(str, sep)
     local parts = {}
-    for part in str:gmatch("([^" .. sep .. "]+)") do
+    for part in (str .. sep):gmatch("([^" .. sep .. "]*)" .. sep) do
         table.insert(parts, part)
     end
     return parts
