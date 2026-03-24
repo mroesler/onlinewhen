@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Activity System
-status: Ready to execute
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-03-24T23:38:13.820Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-03-24T23:41:25.339Z"
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -52,6 +52,7 @@ Plan: 2 of 2
 | Phase 02-database-protocol P02 | 1 | 2 tasks | 1 files |
 | Phase 02-database-protocol P03 | 5 | 2 tasks | 0 files |
 | Phase 03-schedule-tab-ui P01 | 64s | 2 tasks | 2 files |
+| Phase 03-schedule-tab-ui P02 | 51s | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,9 @@ Recent decisions affecting current work:
 - [Phase 02-database-protocol]: No code changes required in 02-03 — Phase 2 integration verified as correct by code trace and in-client smoke test
 - [Phase 03-schedule-tab-ui]: value=act.label (not act.id) for activity dropdown — OW.ACTIVITY_SUBS keyed by label string
 - [Phase 03-schedule-tab-ui]: ClearValue() before SetItems() in onChange handler — prevents stale selection when switching between activities with sub-types
+- [Phase 03-schedule-tab-ui]: exactActivity declared local in onSave scope — available at SaveMyEntry call site without module-scope upvalue
+- [Phase 03-schedule-tab-ui]: TI.Populate replicates onChange show/hide logic — SetValue alone does not fire onChange handler
+- [Phase 03-schedule-tab-ui]: selectedActivity = nil in TI.Reset — ClearValue only clears widget state, not the module-scope upvalue
 
 ### Key Implementation Notes
 
@@ -92,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T23:38:13.818Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-03-24T23:41:25.336Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None

@@ -17,11 +17,11 @@
 
 - [x] **SCHED-01**: Activity section appears at the bottom of the Schedule tab, inside a labeled group box
 - [x] **SCHED-02**: Primary activity dropdown shows all 7 activities
-- [ ] **SCHED-03**: Selecting Normal Dungeon, Heroic Dungeon, Raid, or PVP reveals a second dependent dropdown with relevant sub-options
-- [ ] **SCHED-04**: Selecting Quest, Farm, or Chill hides the exact activity dropdown entirely
-- [ ] **SCHED-05**: Activity is required — Save button is blocked and shows an error if no primary activity is selected
-- [ ] **SCHED-06**: Activity fields are cleared/reset when the form is reset (TI.Reset())
-- [ ] **SCHED-07**: Activity fields are restored when the form is populated from an existing entry (TI.Populate())
+- [x] **SCHED-03**: Selecting Normal Dungeon, Heroic Dungeon, Raid, or PVP reveals a second dependent dropdown with relevant sub-options
+- [x] **SCHED-04**: Selecting Quest, Farm, or Chill hides the exact activity dropdown entirely
+- [x] **SCHED-05**: Activity is required — Save button is blocked and shows an error if no primary activity is selected
+- [x] **SCHED-06**: Activity fields are cleared/reset when the form is reset (TI.Reset())
+- [x] **SCHED-07**: Activity fields are restored when the form is populated from an existing entry (TI.Populate())
 - [x] **SCHED-08**: Main window height is increased to accommodate the new activity section in the schedule tab
 
 ### Network Protocol
@@ -73,11 +73,11 @@
 | NET-04 | Phase 2 | Complete |
 | SCHED-01 | Phase 3 | Complete |
 | SCHED-02 | Phase 3 | Complete |
-| SCHED-03 | Phase 3 | Pending |
-| SCHED-04 | Phase 3 | Pending |
-| SCHED-05 | Phase 3 | Pending |
-| SCHED-06 | Phase 3 | Pending |
-| SCHED-07 | Phase 3 | Pending |
+| SCHED-03 | Phase 3 | Complete |
+| SCHED-04 | Phase 3 | Complete |
+| SCHED-05 | Phase 3 | Complete |
+| SCHED-06 | Phase 3 | Complete |
+| SCHED-07 | Phase 3 | Complete |
 | SCHED-08 | Phase 3 | Complete |
 | LIST-01 | Phase 4 | Pending |
 | LIST-02 | Phase 4 | Pending |

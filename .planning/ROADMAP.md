@@ -17,7 +17,7 @@ WoW without breaking anything that came before.
 
 - [ ] **Phase 1: Data Foundation** - `Data/Activities.lua` with 7 primary activities and all TBC sub-type lists
 - [ ] **Phase 2: Database + Protocol** - Entry schema extended; ANN wire format gains activity fields (backward-compatible)
-- [ ] **Phase 3: Schedule Tab UI** - Activity group box with primary dropdown and conditional exact-activity dropdown
+- [x] **Phase 3: Schedule Tab UI** - Activity group box with primary dropdown and conditional exact-activity dropdown (completed 2026-03-24)
 - [ ] **Phase 4: Player List Column** - Activity column added, sortable, window widened
 - [ ] **Phase 5: Player List Filters** - Second filter row with cascading primary + exact activity filters
 
@@ -73,7 +73,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md — Increase WINDOW_H to 680; add Activity group box with primary dropdown and hidden exact-activity row
-- [ ] 03-02-PLAN.md — Wire onSave() validation, TI.Reset() cleanup, and TI.Populate() restore for activity fields
+- [x] 03-02-PLAN.md — Wire onSave() validation, TI.Reset() cleanup, and TI.Populate() restore for activity fields
 
 ### Phase 4: Player List Column
 **Goal**: The Activity column is visible in the player list table, sortable, and the window is wide enough to display it without layout overflow
@@ -121,6 +121,6 @@ changes consolidated.
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 2/2 | Complete | - |
 | 2. Database + Protocol | 3/3 | Complete | - |
-| 3. Schedule Tab UI | 1/2 | In Progress|  |
+| 3. Schedule Tab UI | 2/2 | Complete   | 2026-03-24 |
 | 4. Player List Column | 0/3 | Not started | - |
 | 5. Player List Filters | 0/3 | Not started | - |
