@@ -116,7 +116,7 @@ end
 -- Serialization
 -- ---------------------------------------------------------------------------
 -- Wire format: VERSION;TYPE;field1;field2;...  (semicolon — pipe is WoW's color escape)
--- ANN: 1;ANN;Name;Realm;Spec;Level;OnlineAtUTC;TzId;UpdatedUTC;Class
+-- ANN: 1;ANN;Name;Realm;Spec;Level;OnlineAtUTC;TzId;UpdatedUTC;Class;PrimaryActivity;ExactActivity
 -- REQ: 1;REQ;Name;Realm
 -- BYE: 1;BYE;Name;Realm
 
@@ -134,6 +134,8 @@ function P.SerializeANN(entry)
         entry.timezone or "UTC",
         tostring(entry.updated  or 0),
         entry.class    or "",
+        entry.primaryActivity or "",
+        entry.exactActivity   or "",
     }, SEP)
 end
 
@@ -147,7 +149,7 @@ end
 
 local function split(str, sep)
     local parts = {}
-    for part in str:gmatch("([^" .. sep .. "]+)") do
+    for part in (str .. sep):gmatch("([^" .. sep .. "]*)" .. sep) do
         table.insert(parts, part)
     end
     return parts
@@ -164,7 +166,8 @@ end
 local function validateANN(fields)
     -- fields: [1]=version [2]="ANN" [3]=name [4]=realm [5]=spec
     --         [6]=level [7]=onlineAt [8]=tzId [9]=updated [10]=class
-    if #fields ~= 10 then return false end
+    --         [11]=primaryActivity (optional) [12]=exactActivity (optional)
+    if #fields ~= 10 and #fields ~= 12 then return false end
     if fields[1] ~= MSG_VERSION then return false end
     if fields[5] ~= "" and not VALID_SPECS[fields[5]] then return false end
     if fields[10] ~= "" and not VALID_CLASSES[fields[10]] then return false end
@@ -250,14 +253,16 @@ function P.HandleANN(fields)
     if myRealm and msgRealm ~= myRealm then return end
 
     local entry = {
-        name     = fields[3],
-        realm    = fields[4],
-        spec     = fields[5] ~= "" and fields[5] or nil,
-        level    = tonumber(fields[6]),
-        onlineAt = tonumber(fields[7]),
-        timezone = fields[8],
-        updated  = tonumber(fields[9]),
-        class    = fields[10] ~= "" and fields[10] or nil,
+        name            = fields[3],
+        realm           = fields[4],
+        spec            = fields[5] ~= "" and fields[5] or nil,
+        level           = tonumber(fields[6]),
+        onlineAt        = tonumber(fields[7]),
+        timezone        = fields[8],
+        updated         = tonumber(fields[9]),
+        class           = fields[10] ~= "" and fields[10] or nil,
+        primaryActivity = (fields[11] and fields[11] ~= "") and fields[11] or nil,
+        exactActivity   = (fields[12] and fields[12] ~= "") and fields[12] or nil,
     }
 
     -- Mark online before UpsertPeer so the status is set when Refresh() runs
