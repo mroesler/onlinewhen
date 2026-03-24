@@ -1,6 +1,9 @@
 # Claude Code — local IDE state, memory, and settings
 .claude/
 
+# GSD planning artifacts — internal dev scaffolding, not part of the addon
+.planning/
+
 # Release packages — built artifacts, not source
 *.zip
 *.tar.gz
