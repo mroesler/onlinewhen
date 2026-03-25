@@ -550,6 +550,10 @@ end
 
 -- Repopulate when re-opened with an existing saved entry
 function TI.Populate()
+    -- Always hide exact activity first; shown below only when the saved entry needs it.
+    if lblExactActivity then lblExactActivity:Hide() end
+    if ddExactActivity  then ddExactActivity:Hide()  end
+
     local my = OnlineWhen.GetMyEntry()
     if not my then return end
     -- Spec is intentionally NOT restored — user must actively select spec each save.
