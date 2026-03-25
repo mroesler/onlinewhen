@@ -503,6 +503,9 @@ function TL.Refresh()
     if headerBtns.class then
         headerBtns.class:SetText("Class" .. arrowFor("class"))
     end
+    if headerBtns.activity then
+        headerBtns.activity:SetText("Activity" .. arrowFor("activity"))
+    end
     if headerBtns.time then
         headerBtns.time:SetText((L.COL_TIME or "Online At") .. arrowFor("time"))
     end
@@ -661,6 +664,7 @@ function TL.Build(parent)
     makeHeader("level", L.COL_LEVEL or "Level",                   COL_X.level, COL_W.level)
     makeHeader("class", "Class",                                   COL_X.class, COL_W.class)
     makeHeader("spec",  L.COL_SPEC  or "Spec",                    COL_X.spec,  COL_W.spec)
+    makeHeader("activity", "Activity", COL_X.activity, COL_W.activity)
     makeHeader("time",  L.COL_TIME  or "Online At",               COL_X.time,  COL_W.time)
 
     -- Non-sortable "Actions" header (plain FontString, no click handler)
