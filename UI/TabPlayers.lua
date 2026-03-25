@@ -201,6 +201,13 @@ local function updateRows(entries)
             row.spec:SetText(entry.spec or "?")
             row.spec:SetTextColor(1, 1, 1, alpha)
 
+            row.activityPrimary:SetText(entry.primaryActivity or "")
+            row.activityPrimary:SetTextColor(1, 1, 1, alpha)
+
+            row.activityExact:SetText(entry.exactActivity or "")
+            row.activityExact:SetTextColor(DIM[1], DIM[2], DIM[3], DIM[4])
+            row.activityExact:SetAlpha(alpha)
+
             row.level:SetText(entry.level and tostring(entry.level) or "?")
             row.level:SetTextColor(1, 1, 1, alpha)
 
