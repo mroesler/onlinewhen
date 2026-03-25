@@ -33,10 +33,10 @@
 
 ### Player List
 
-- [ ] **LIST-01**: "Activity" column added after Spec column, showing primary and exact activity on separate lines in one cell
-- [ ] **LIST-02**: Activity column is sortable by exact activity (falls back to primary activity when exact is absent)
-- [ ] **LIST-03**: Entries with no activity data show a blank Activity cell (graceful degradation for old peers)
-- [ ] **LIST-04**: Main window width is increased to accommodate the new Activity column while maintaining relative layout proportions
+- [x] **LIST-01**: "Activity" column added after Spec column, showing primary and exact activity on separate lines in one cell
+- [x] **LIST-02**: Activity column is sortable by exact activity (falls back to primary activity when exact is absent)
+- [x] **LIST-03**: Entries with no activity data show a blank Activity cell (graceful degradation for old peers)
+- [x] **LIST-04**: Main window width is increased to accommodate the new Activity column while maintaining relative layout proportions
 
 ### Filters
 
@@ -79,10 +79,10 @@
 | SCHED-06 | Phase 3 | Complete |
 | SCHED-07 | Phase 3 | Complete |
 | SCHED-08 | Phase 3 | Complete |
-| LIST-01 | Phase 4 | Pending |
-| LIST-02 | Phase 4 | Pending |
-| LIST-03 | Phase 4 | Pending |
-| LIST-04 | Phase 4 | Pending |
+| LIST-01 | Phase 4 | Complete |
+| LIST-02 | Phase 4 | Complete |
+| LIST-03 | Phase 4 | Complete |
+| LIST-04 | Phase 4 | Complete |
 | FILT-01 | Phase 5 | Pending |
 | FILT-02 | Phase 5 | Pending |
 | FILT-03 | Phase 5 | Pending |

@@ -400,7 +400,7 @@ function TI.Build(parent)
 
     -- Group box width = parent width minus 2×side margin (6px each side)
     local groupMargin = 6
-    local groupWidth  = 776   -- 788 content width − 2×6 margin
+    local groupWidth  = 926   -- 938 content width − 2×6 margin
 
     -- Group 1 position in parent
     local charGroupY     = -groupMargin               -- 6px from content area top

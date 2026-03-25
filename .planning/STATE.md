@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Activity System
-status: Ready to execute
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-03-25T00:43:49.599Z"
+status: Ready to plan
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-03-25T00:50:39.140Z"
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 
 ## Current Position
 
-Phase: 04 (player-list-column) — EXECUTING
-Plan: 3 of 3
+Phase: 5
+Plan: Not started
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Plan: 3 of 3
 | Phase 03-schedule-tab-ui P02 | 51s | 2 tasks | 1 files |
 | Phase 04-player-list-column P01 | 2min | 2 tasks | 2 files |
 | Phase 04-player-list-column P02 | 1min | 2 tasks | 1 files |
+| Phase 04-player-list-column P03 | 3min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,8 @@ Recent decisions affecting current work:
 - [Phase 04-player-list-column]: activity column at COL_X=420 COL_W=150; time shifted to x=576, actions shifted to x=828 to accommodate new column
 - [Phase 04-player-list-column]: activityExact uses SetAlpha(alpha) separate from SetTextColor(DIM) to allow isPast fade while keeping DIM base color — mirrors timeSecondary pattern
 - [Phase 04-player-list-column]: COL_W.activity - 4 width avoids right-edge clipping for activity FontStrings — consistent with COL_W.name - 6 pattern
+- [Phase 04-player-list-column]: nil-last sort uses early return bNil before ASC/DESC flip — nil entries always last in both directions
+- [Phase 04-player-list-column]: activity sort key is exactActivity (non-empty) with fallback to primaryActivity per D-07
 
 ### Key Implementation Notes
 
@@ -102,6 +105,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T00:43:49.596Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-03-25T00:46:15.626Z
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None

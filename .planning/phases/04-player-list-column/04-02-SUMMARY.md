@@ -95,6 +95,12 @@ Worktree branch `worktree-agent-af275ae8` did not have the 04-01 layout constant
 - Activity column FontStrings are in place and populated — ready for 04-03 to add Activity column header and activity filters
 - Both LIST-01 (activity column display) and LIST-03 (blank for old-protocol peers) requirements satisfied
 
+## Self-Check: PASSED
+
+- SUMMARY.md: FOUND at .planning/phases/04-player-list-column/04-02-SUMMARY.md
+- Commit f052122 (Task 1): FOUND
+- Commit 850c68b (Task 2): FOUND
+
 ---
 *Phase: 04-player-list-column*
 *Completed: 2026-03-25*

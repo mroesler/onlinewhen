@@ -89,7 +89,7 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md — Widen WINDOW_W to 950; update CONTENT_W, COL_X, and COL_W to insert Activity column after Spec
 - [x] 04-02-PLAN.md — Add activityPrimary and activityExact FontStrings to row pool; wire them in updateRows()
-- [ ] 04-03-PLAN.md — Add Activity column header button and activity sort case in sortEntries()
+- [x] 04-03-PLAN.md — Add Activity column header button and activity sort case in sortEntries()
 
 ### Phase 5: Player List Filters
 **Goal**: Players can filter the list by primary and exact activity; the exact filter cascades from the primary selection and resets when Reset Filters is clicked
