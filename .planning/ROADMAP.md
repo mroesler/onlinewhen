@@ -19,7 +19,7 @@ WoW without breaking anything that came before.
 - [ ] **Phase 2: Database + Protocol** - Entry schema extended; ANN wire format gains activity fields (backward-compatible)
 - [x] **Phase 3: Schedule Tab UI** - Activity group box with primary dropdown and conditional exact-activity dropdown (completed 2026-03-24)
 - [ ] **Phase 4: Player List Column** - Activity column added, sortable, window widened
-- [ ] **Phase 5: Player List Filters** - Second filter row with cascading primary + exact activity filters
+- [x] **Phase 5: Player List Filters** - Second filter row with cascading primary + exact activity filters (completed 2026-03-25)
 
 ## Phase Details
 
@@ -106,7 +106,7 @@ Plans:
 Plans:
 - [x] 05-01-PLAN.md — Add filterPrimaryActivity and filterExactActivity state variables; extend applyFilters() logic
 - [x] 05-02-PLAN.md — Build second filter row UI with primary activity and exact activity dropdowns; adjust layout offsets
-- [ ] 05-03-PLAN.md — Wire cascade behavior and extend Reset Filters to clear both activity filters
+- [x] 05-03-PLAN.md — Wire cascade behavior and extend Reset Filters to clear both activity filters
 
 ## Progress
 
@@ -123,4 +123,4 @@ changes consolidated.
 | 2. Database + Protocol | 3/3 | Complete | - |
 | 3. Schedule Tab UI | 2/2 | Complete   | 2026-03-24 |
 | 4. Player List Column | 2/3 | In Progress|  |
-| 5. Player List Filters | 2/3 | In Progress|  |
+| 5. Player List Filters | 3/3 | Complete   | 2026-03-25 |

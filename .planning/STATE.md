@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Activity System
-status: Ready to execute
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-03-25T01:22:50.298Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-03-25T01:27:38.118Z"
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -58,6 +58,7 @@ Plan: 3 of 3
 | Phase 04-player-list-column P03 | 3min | 2 tasks | 1 files |
 | Phase 05-player-list-filters P01 | 2min | 2 tasks | 1 files |
 | Phase 05-player-list-filters PP02 | 3min | 2 tasks | 1 files |
+| Phase 05-player-list-filters P03 | 4min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,8 @@ Recent decisions affecting current work:
 - [Phase 05-player-list-filters]: filterPrimaryActivity and filterExactActivity as nil-or-string-label locals, AND-chain nil-guard pattern
 - [Phase 05-player-list-filters]: columnHeaderY expanded to -80 for two-row filter bar; filterBar2Y=-47 for row 2 vertical centering
 - [Phase 05-player-list-filters]: primaryActivityChoices value=act.label (string) consistent with entry.primaryActivity comparison; exactActivityFilterBtn starts disabled pending cascade wiring in Plan 05-03
+- [Phase 05-player-list-filters]: OW.ACTIVITY_SUBS[val] with #subs > 0 check handles Quest/Farm/Chill empty tables without special-casing
+- [Phase 05-player-list-filters]: primaryActivityFilterBtn reset uses ._fs:SetText(._default) not setChoices — primary choices never change
 
 ### Key Implementation Notes
 
@@ -110,6 +113,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T01:22:50.295Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-03-25T01:27:38.115Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None
