@@ -259,6 +259,8 @@ local function onSave()
     selectedActivity = ddActivity and ddActivity:GetValue()
     if not selectedActivity then showError("Select an activity.") return end
     local exactActivity = ddExactActivity and ddExactActivity:GetValue()
+    local actSubs = OW.ACTIVITY_SUBS and OW.ACTIVITY_SUBS[selectedActivity] or {}
+    if #actSubs > 0 and not exactActivity then showError("Select a specific activity.") return end
 
     local day    = ddDay   and ddDay:GetValue()
     local month  = ddMonth and ddMonth:GetValue()
