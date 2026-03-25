@@ -447,12 +447,13 @@ function TI.Build(parent)
 
     curY = CONTENT_Y
 
-    -- Date and Time on the same row: Month | Day | Year | Hour | Min
-    -- Horizontal offsets (visual x from contentLeft):
-    --   Month at +0 (w=110), Day at +130 (w=42), Year at +195 (w=68)
-    --   Hour at +283 (w=42), Min at +341 (w=42)  [20px gap after Year right edge at 263]
+    -- Date and Time on the same row: Month | Day | Year   Hour | Min
+    -- 20px gap between fields within each group; 30px gap between date and time groups.
+    -- Offsets (visual x from contentLeft, gap = nextX - prevX - prevW):
+    --   Month +0 (w=110, right=110) → Day +130 (gap=20) → Year +192 (gap=20, right=260)
+    --   Hour +290 (gap=30) → Min +352 (gap=20)
     lbl(dateTimeGroup, L.LABEL_DATE or "Date", contentLeft,        curY)
-    lbl(dateTimeGroup, L.LABEL_TIME or "Time", contentLeft + 283,  curY)
+    lbl(dateTimeGroup, L.LABEL_TIME or "Time", contentLeft + 290,  curY)
     curY = curY - 20
 
     -- Use server timestamp for date; GetGameTime() for realm H:M (matches the in-game clock).
@@ -474,9 +475,9 @@ function TI.Build(parent)
 
     ddMonth = makeDropdown(dateTimeGroup, "OWDdMonth", monthItems(),   thisMonth,     contentLeft,        curY, 110, function() updateDayItems() end)
     ddDay   = makeDropdown(dateTimeGroup, "OWDdDay",   initDayItems,   today,         contentLeft + 130,  curY, 42,  nil)
-    ddYear  = makeDropdown(dateTimeGroup, "OWDdYear",  yearItems(),    thisYear,      contentLeft + 195,  curY, 68,  function() updateDayItems() end)
-    ddHour  = makeDropdown(dateTimeGroup, "OWDdHour",  hourItems(),    defaultHour,   contentLeft + 283,  curY, 42,  nil)
-    ddMin   = makeDropdown(dateTimeGroup, "OWDdMin",   minuteItems(),  defaultMinute, contentLeft + 341,  curY, 42,  nil)
+    ddYear  = makeDropdown(dateTimeGroup, "OWDdYear",  yearItems(),    thisYear,      contentLeft + 192,  curY, 68,  function() updateDayItems() end)
+    ddHour  = makeDropdown(dateTimeGroup, "OWDdHour",  hourItems(),    defaultHour,   contentLeft + 290,  curY, 42,  nil)
+    ddMin   = makeDropdown(dateTimeGroup, "OWDdMin",   minuteItems(),  defaultMinute, contentLeft + 352,  curY, 42,  nil)
 
     -- Timezone — equal spacing below date+time row
     curY = curY - 62
