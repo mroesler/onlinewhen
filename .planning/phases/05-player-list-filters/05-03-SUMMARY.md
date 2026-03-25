@@ -75,3 +75,19 @@ Phase 05 (player-list-filters) is now complete. All activity filter interactions
 ---
 *Phase: 05-player-list-filters*
 *Completed: 2026-03-25*
+
+## Self-Check: PASSED
+
+- [x] FOUND: 05-03-SUMMARY.md
+- [x] FOUND: commit d0e17ed (feat: wire primary activity onChange cascade)
+- [x] FOUND: commit 98927f2 (feat: extend Reset Filters to clear activity filters)
+- [x] `local subs = OW.ACTIVITY_SUBS[val]` present in primaryActivityFilterBtn onChange (line 622)
+- [x] `if subs and #subs > 0 then` present (line 623)
+- [x] `exactActivityFilterBtn.setActive(true)` in has-sub-types branch (line 630)
+- [x] `exactActivityFilterBtn.setActive(false)` in nil and no-sub-types branches (lines 620, 634)
+- [x] `filterExactActivity = nil` before cascade branch (line 614)
+- [x] `filterPrimaryActivity = nil` in Reset Filters handler (line 681)
+- [x] `filterExactActivity   = nil` in Reset Filters handler (line 682)
+- [x] `primaryActivityFilterBtn._fs:SetText(primaryActivityFilterBtn._default)` in Reset (line 683)
+- [x] `exactActivityFilterBtn.setChoices(` with "Any Exact Activity" in Reset (line 685)
+- [x] `exactActivityFilterBtn.setActive(false)` in Reset (line 686)
