@@ -524,11 +524,12 @@ end
 function TL.Build(parent)
     local L = OW.L
 
-    -- columnHeaderY: top of column headers, pushed down to make room for the filter bar
-    local columnHeaderY = -(FILTER_TOP_PAD + FILTER_H + FILTER_BOT_PAD)   -- = -44
+    -- columnHeaderY: top of column headers, pushed down to make room for two filter rows
+    local columnHeaderY = -(FILTER_TOP_PAD + FILTER_H + FILTER_BOT_PAD + FILTER_H + FILTER_BOT_PAD)   -- = -80
 
     -- ---- Filter bar ----
     local filterBarY = -(FILTER_TOP_PAD + math.floor((FILTER_H - 22) / 2))  -- vertically centre 22px buttons in bar = -11
+    local filterBar2Y = -(FILTER_TOP_PAD + FILTER_H + FILTER_BOT_PAD + math.floor((FILTER_H - 22) / 2))  -- row 2 vertical center = -47
 
     -- Filter order: Status | Level | Class | Spec                [Reset →]
     statusFilterBtn = makeDropdown(parent, 120, "Any Status", {
