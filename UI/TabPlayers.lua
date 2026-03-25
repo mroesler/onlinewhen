@@ -712,6 +712,20 @@ function TL.Build(parent)
         specFs:SetJustifyH("LEFT")
         specFs:SetTextColor(unpack(WHITE))
 
+        -- Activity primary (top line of activity cell)
+        local activityPrimary = rowFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        activityPrimary:SetPoint("TOPLEFT", rowFrame, "TOPLEFT", COL_X.activity, -4)
+        activityPrimary:SetWidth(COL_W.activity - 4)
+        activityPrimary:SetJustifyH("LEFT")
+        activityPrimary:SetTextColor(unpack(WHITE))
+
+        -- Activity exact (bottom line of activity cell, dimmer)
+        local activityExact = rowFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+        activityExact:SetPoint("BOTTOMLEFT", rowFrame, "BOTTOMLEFT", COL_X.activity, 4)
+        activityExact:SetWidth(COL_W.activity - 4)
+        activityExact:SetJustifyH("LEFT")
+        activityExact:SetTextColor(unpack(DIM))
+
         -- Server time / UTC (top line of time cell)
         local timePrimary = rowFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         timePrimary:SetPoint("TOPLEFT", rowFrame, "TOPLEFT", COL_X.time, -4)
@@ -761,6 +775,8 @@ function TL.Build(parent)
             level         = levelFs,
             class         = classFs,
             spec          = specFs,
+            activityPrimary = activityPrimary,
+            activityExact   = activityExact,
             timePrimary   = timePrimary,
             timeSecondary = timeSecondary,
             inviteBtn     = inviteBtn,
