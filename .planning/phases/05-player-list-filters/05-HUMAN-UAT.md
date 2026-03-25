@@ -1,5 +1,5 @@
 ---
-status: partial
+status: approved
 phase: 05-player-list-filters
 source: [05-VERIFICATION.md]
 started: 2026-03-25T00:00:00Z
