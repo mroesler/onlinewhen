@@ -387,14 +387,14 @@ function TI.Build(parent)
     local saveButtonHeight  = 28
     local saveButtonPadding = 14   -- equal gap: G2-bottom→button-top and button-bottom→frame-bottom
 
-    -- contentAreaHeight = tab frame height: 680 window − 32 tab − 6 top inset − 6 bottom inset − 4 gap = 632
-    local contentAreaHeight = 632
+    -- contentAreaHeight = tab frame height: 536 window − 32 tab − 6 top inset − 6 bottom inset − 4 gap = 488
+    local contentAreaHeight = 488
 
     -- Group 2 fills remaining space so saveButtonPadding is equal on both sides of the button
     --   dateTimeGroupTopAbs = groupMargin + charGroupHeight + 8 = 6 + 90 + 8 = 104
-    --   Bottom space with Activity group: activityGroupHeight(152) + gap(8) + saveButtonPadding(14) + saveButtonHeight(28) + saveButtonPadding(14) = 216
-    --   dateTimeGroupHeight = contentAreaHeight − dateTimeGroupTopAbs − bottomSpace = 632 − 104 − 216 = 312
-    local dateTimeGroupHeight = 312
+    --   Bottom space with Activity group: activityGroupHeight(90) + gap(8) + saveButtonPadding(14) + saveButtonHeight(28) + saveButtonPadding(14) = 154
+    --   dateTimeGroupHeight = contentAreaHeight − dateTimeGroupTopAbs − bottomSpace = 488 − 104 − 154 = 230
+    local dateTimeGroupHeight = 230
 
     -- Group box width = parent width minus 2×side margin (6px each side)
     local groupMargin = 6
@@ -445,12 +445,12 @@ function TI.Build(parent)
 
     curY = CONTENT_Y
 
-    -- Date row: Month | Day | Year — all left-aligned at contentLeft
-    -- Horizontal offsets (frame anchor = visual x - 16 due to UIDropDownMenu padding):
-    --   Month visual at contentLeft        → frame at contentLeft - 16
-    --   Day   visual at contentLeft + 130  → frame at contentLeft + 114
-    --   Year  visual at contentLeft + 195  → frame at contentLeft + 179
-    lbl(dateTimeGroup, L.LABEL_DATE or "Date", contentLeft, curY)
+    -- Date and Time on the same row: Month | Day | Year | Hour | Min
+    -- Horizontal offsets (visual x from contentLeft):
+    --   Month at +0 (w=110), Day at +130 (w=42), Year at +195 (w=68)
+    --   Hour at +283 (w=42), Min at +341 (w=42)  [20px gap after Year right edge at 263]
+    lbl(dateTimeGroup, L.LABEL_DATE or "Date", contentLeft,        curY)
+    lbl(dateTimeGroup, L.LABEL_TIME or "Time", contentLeft + 283,  curY)
     curY = curY - 20
 
     -- Use server timestamp for date; GetGameTime() for realm H:M (matches the in-game clock).
@@ -459,31 +459,24 @@ function TI.Build(parent)
     local thisMonth       = tonumber(date("!%m", serverTimestamp))
     local thisYear        = tonumber(date("!%Y", serverTimestamp))
 
-    -- Order: Month | Day | Year
+    -- Default to current realm time rounded up to nearest 5-minute mark.
+    local defaultHour, defaultMinute = GetGameTime()
+    defaultMinute = math.ceil(defaultMinute / 5) * 5
+    if defaultMinute >= 60 then defaultMinute = 0; defaultHour = (defaultHour + 1) % 24 end
+
     -- Month onChange rebuilds Day items; Year onChange does the same (Feb leap-year check).
     local initDayItems = {}
     for day = 1, daysInMonth(thisMonth, thisYear) do
         initDayItems[#initDayItems+1] = { value = day, label = string.format("%02d", day) }
     end
 
-    ddMonth = makeDropdown(dateTimeGroup, "OWDdMonth", monthItems(),   thisMonth, contentLeft,        curY, 110, function() updateDayItems() end)
-    ddDay   = makeDropdown(dateTimeGroup, "OWDdDay",   initDayItems,   today,     contentLeft + 130,  curY, 42,  nil)
-    ddYear  = makeDropdown(dateTimeGroup, "OWDdYear",  yearItems(),    thisYear,  contentLeft + 195,  curY, 68,  function() updateDayItems() end)
+    ddMonth = makeDropdown(dateTimeGroup, "OWDdMonth", monthItems(),   thisMonth,     contentLeft,        curY, 110, function() updateDayItems() end)
+    ddDay   = makeDropdown(dateTimeGroup, "OWDdDay",   initDayItems,   today,         contentLeft + 130,  curY, 42,  nil)
+    ddYear  = makeDropdown(dateTimeGroup, "OWDdYear",  yearItems(),    thisYear,      contentLeft + 195,  curY, 68,  function() updateDayItems() end)
+    ddHour  = makeDropdown(dateTimeGroup, "OWDdHour",  hourItems(),    defaultHour,   contentLeft + 283,  curY, 42,  nil)
+    ddMin   = makeDropdown(dateTimeGroup, "OWDdMin",   minuteItems(),  defaultMinute, contentLeft + 341,  curY, 42,  nil)
 
-    -- Time row: Hour | Minute — equal spacing below date section
-    curY = curY - 62
-    lbl(dateTimeGroup, L.LABEL_TIME or "Time", contentLeft, curY)
-    curY = curY - 20
-
-    -- Default to current realm time rounded up to nearest 5-minute mark.
-    local defaultHour, defaultMinute = GetGameTime()
-    defaultMinute = math.ceil(defaultMinute / 5) * 5
-    if defaultMinute >= 60 then defaultMinute = 0; defaultHour = (defaultHour + 1) % 24 end
-
-    ddHour = makeDropdown(dateTimeGroup, "OWDdHour", hourItems(),   defaultHour,   contentLeft,      curY, 42, nil)
-    ddMin  = makeDropdown(dateTimeGroup, "OWDdMin",  minuteItems(), defaultMinute, contentLeft + 74, curY, 42, nil)
-
-    -- Timezone — equal spacing below time section
+    -- Timezone — equal spacing below date+time row
     curY = curY - 62
     lbl(dateTimeGroup, L.LABEL_TIMEZONE or "Timezone", contentLeft, curY)
     curY = curY - 20
@@ -502,15 +495,16 @@ function TI.Build(parent)
     -- ============================================================
     -- GROUP 3 — Activity
     -- ============================================================
-    local activityGroupHeight = 152
+    local activityGroupHeight = 90
     local activityGroupY = dateTimeGroupY - dateTimeGroupHeight - 8
 
     local activityGroup = makeGroupBox(parent, "Activity", groupMargin, activityGroupY, groupWidth, activityGroupHeight)
 
     curY = CONTENT_Y
 
-    -- Primary activity row
+    -- Activity and Specific Activity side by side on the same row
     lbl(activityGroup, "Activity", contentLeft, curY)
+    lblExactActivity = lbl(activityGroup, "Specific Activity", contentLeft + 220, curY)
     curY = curY - 20
 
     ddActivity = makeDropdown(activityGroup, "OWDdActivity", activityItems(), nil,
@@ -530,14 +524,10 @@ function TI.Build(parent)
             end
         end,
         "— Select —")
-    curY = curY - 36
 
-    -- Exact activity row (hidden by default per D-03)
-    lblExactActivity = lbl(activityGroup, "Specific Activity", contentLeft, curY)
-    curY = curY - 20
-
+    -- Exact activity (hidden by default per D-03), positioned to the right of Activity
     ddExactActivity = makeDropdown(activityGroup, "OWDdExactActivity", {}, nil,
-        contentLeft, curY, 200, nil, "— Select —")
+        contentLeft + 220, curY, 200, nil, "— Select —")
 
     -- Hide exact row on creation (widgets are visible by default)
     lblExactActivity:Hide()
