@@ -104,9 +104,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: Add `filterPrimaryActivity` and `filterExactActivity` state variables; extend the `applyFilters()` logic in `UI/TabPlayers.lua` to respect both new filters
-- [ ] 05-02: Build the second filter row UI — primary activity dropdown (7 items + "Any Activity") and exact activity dropdown (disabled until triggered); uses the existing closure-based dropdown pattern from TabPlayers
-- [ ] 05-03: Wire cascading behavior — primary onChange populates/enables exact or disables it; "Reset Filters" clears and disables both; verify filter interaction with existing class/spec filters
+- [x] 05-01-PLAN.md — Add filterPrimaryActivity and filterExactActivity state variables; extend applyFilters() logic
+- [x] 05-02-PLAN.md — Build second filter row UI with primary activity and exact activity dropdowns; adjust layout offsets
+- [ ] 05-03-PLAN.md — Wire cascade behavior and extend Reset Filters to clear both activity filters
 
 ## Progress
 
@@ -123,4 +123,4 @@ changes consolidated.
 | 2. Database + Protocol | 3/3 | Complete | - |
 | 3. Schedule Tab UI | 2/2 | Complete   | 2026-03-24 |
 | 4. Player List Column | 2/3 | In Progress|  |
-| 5. Player List Filters | 0/3 | Not started | - |
+| 5. Player List Filters | 2/3 | In Progress|  |

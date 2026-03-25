@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Activity System
-status: Ready to plan
-stopped_at: Completed 04-03-PLAN.md
-last_updated: "2026-03-25T00:50:39.140Z"
+status: Ready to execute
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-03-25T01:22:50.298Z"
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 13
+  completed_plans: 12
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Players can immediately see not just *when* someone is online but *what they plan to do* — enabling at-a-glance group formation.
-**Current focus:** Phase 04 — player-list-column
+**Current focus:** Phase 05 — player-list-filters
 
 ## Current Position
 
-Phase: 5
-Plan: Not started
+Phase: 05 (player-list-filters) — EXECUTING
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -56,6 +56,8 @@ Plan: Not started
 | Phase 04-player-list-column P01 | 2min | 2 tasks | 2 files |
 | Phase 04-player-list-column P02 | 1min | 2 tasks | 1 files |
 | Phase 04-player-list-column P03 | 3min | 2 tasks | 1 files |
+| Phase 05-player-list-filters P01 | 2min | 2 tasks | 1 files |
+| Phase 05-player-list-filters PP02 | 3min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -87,6 +89,9 @@ Recent decisions affecting current work:
 - [Phase 04-player-list-column]: COL_W.activity - 4 width avoids right-edge clipping for activity FontStrings — consistent with COL_W.name - 6 pattern
 - [Phase 04-player-list-column]: nil-last sort uses early return bNil before ASC/DESC flip — nil entries always last in both directions
 - [Phase 04-player-list-column]: activity sort key is exactActivity (non-empty) with fallback to primaryActivity per D-07
+- [Phase 05-player-list-filters]: filterPrimaryActivity and filterExactActivity as nil-or-string-label locals, AND-chain nil-guard pattern
+- [Phase 05-player-list-filters]: columnHeaderY expanded to -80 for two-row filter bar; filterBar2Y=-47 for row 2 vertical centering
+- [Phase 05-player-list-filters]: primaryActivityChoices value=act.label (string) consistent with entry.primaryActivity comparison; exactActivityFilterBtn starts disabled pending cascade wiring in Plan 05-03
 
 ### Key Implementation Notes
 
@@ -105,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T00:46:15.626Z
-Stopped at: Completed 04-03-PLAN.md
+Last session: 2026-03-25T01:22:50.295Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None

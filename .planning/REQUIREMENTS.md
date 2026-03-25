@@ -40,12 +40,12 @@
 
 ### Filters
 
-- [ ] **FILT-01**: Second filter row added below the existing filter row with primary activity and exact activity dropdowns
-- [ ] **FILT-02**: Primary activity filter shows all 7 activities plus "Any Activity"
-- [ ] **FILT-03**: Exact activity filter is disabled until a primary activity with sub-types is selected
+- [x] **FILT-01**: Second filter row added below the existing filter row with primary activity and exact activity dropdowns
+- [x] **FILT-02**: Primary activity filter shows all 7 activities plus "Any Activity"
+- [x] **FILT-03**: Exact activity filter is disabled until a primary activity with sub-types is selected
 - [ ] **FILT-04**: Selecting a primary activity with sub-types enables the exact activity filter and populates it with that activity's sub-options
-- [ ] **FILT-05**: Changing the primary activity filter clears and disables the exact activity filter (same pattern as class→spec)
-- [ ] **FILT-06**: Selecting Quest, Farm, or Chill in the primary filter keeps the exact activity filter disabled (no sub-types)
+- [x] **FILT-05**: Changing the primary activity filter clears and disables the exact activity filter (same pattern as class→spec)
+- [x] **FILT-06**: Selecting Quest, Farm, or Chill in the primary filter keeps the exact activity filter disabled (no sub-types)
 - [ ] **FILT-07**: "Reset Filters" clears both activity filters and resets the exact activity filter to disabled state
 
 ## Out of Scope
@@ -83,12 +83,12 @@
 | LIST-02 | Phase 4 | Complete |
 | LIST-03 | Phase 4 | Complete |
 | LIST-04 | Phase 4 | Complete |
-| FILT-01 | Phase 5 | Pending |
-| FILT-02 | Phase 5 | Pending |
-| FILT-03 | Phase 5 | Pending |
+| FILT-01 | Phase 5 | Complete |
+| FILT-02 | Phase 5 | Complete |
+| FILT-03 | Phase 5 | Complete |
 | FILT-04 | Phase 5 | Pending |
-| FILT-05 | Phase 5 | Pending |
-| FILT-06 | Phase 5 | Pending |
+| FILT-05 | Phase 5 | Complete |
+| FILT-06 | Phase 5 | Complete |
 | FILT-07 | Phase 5 | Pending |
 
 **Coverage:**
