@@ -79,6 +79,14 @@ local function sortEntries(entries)
         elseif sortColumn == "class" then
             sortValA = (a.class or ""):lower()
             sortValB = (b.class or ""):lower()
+        elseif sortColumn == "activity" then
+            local aNil = (a.primaryActivity == nil)
+            local bNil = (b.primaryActivity == nil)
+            if aNil ~= bNil then
+                return bNil   -- nil entries always sort last (non-nil < nil in ASC, non-nil > nil in DESC handled by returning bNil directly before the ASC/DESC flip below)
+            end
+            sortValA = ((a.exactActivity and a.exactActivity ~= "") and a.exactActivity or (a.primaryActivity or "")):lower()
+            sortValB = ((b.exactActivity and b.exactActivity ~= "") and b.exactActivity or (b.primaryActivity or "")):lower()
         elseif sortColumn == "status" then
             local statusA = OW.GetStatusForEntry and OW.GetStatusForEntry(a.name) or OW.STATUS.UNKNOWN
             local statusB = OW.GetStatusForEntry and OW.GetStatusForEntry(b.name) or OW.STATUS.UNKNOWN
