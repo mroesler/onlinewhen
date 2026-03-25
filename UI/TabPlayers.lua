@@ -14,7 +14,7 @@ local sortDir    = "ASC"
 local currentPage = 1
 
 -- Layout constants
-local CONTENT_W      = 788   -- full tab frame width (WINDOW_W 800 - INSET*2 6)
+local CONTENT_W      = 938   -- full tab frame width (WINDOW_W 950 - INSET*2 6)
 local ROW_HEIGHT     = 30
 local PAGE_SIZE      = 12   -- entries per page
 local MAX_ROWS       = PAGE_SIZE
@@ -23,8 +23,8 @@ local FILTER_H       = 28   -- filter bar height
 local FILTER_BOT_PAD = 8    -- gap between filter bar and column headers
 local ROWS_BOT_PAD   = 6    -- gap below last row before pagination/buttons
 
-local COL_X = { status = 0, name = 22, level = 168, class = 218, spec = 314, time = 420, actions = 672 }
-local COL_W = { status = 18, name = 140, level = 44, class = 90, spec = 100, time = 246, actions = 90  }
+local COL_X = { status = 0, name = 22, level = 168, class = 218, spec = 314, activity = 420, time = 576, actions = 828 }
+local COL_W = { status = 18, name = 140, level = 44, class = 90, spec = 100, activity = 150, time = 246, actions = 90  }
 
 local headerBtns   = {}
 local rowPool      = {}
