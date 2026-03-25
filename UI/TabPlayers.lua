@@ -603,6 +603,28 @@ function TL.Build(parent)
     specFilterBtn:SetPoint("TOPLEFT", parent, "TOPLEFT", 428, filterBarY)
     specFilterBtn.setActive(false)
 
+    -- ---- Filter bar row 2: Activity filters ----
+    local primaryActivityChoices = { { label = "Any Activity", value = nil } }
+    for _, act in ipairs(OW.ACTIVITY_LIST) do
+        primaryActivityChoices[#primaryActivityChoices + 1] = { label = act.label, value = act.label }
+    end
+
+    primaryActivityFilterBtn = makeDropdown(parent, 180, "Any Activity", primaryActivityChoices, function(val)
+        filterPrimaryActivity = val
+        filterExactActivity = nil
+        currentPage = 1
+        TL.Refresh()
+    end)
+    primaryActivityFilterBtn:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, filterBar2Y)
+
+    exactActivityFilterBtn = makeDropdown(parent, 220, "Any Exact Activity",
+        { { label = "Any Exact Activity", value = nil } },
+        function(val)
+            filterExactActivity = val ; currentPage = 1 ; TL.Refresh()
+        end)
+    exactActivityFilterBtn:SetPoint("TOPLEFT", parent, "TOPLEFT", 190, filterBar2Y)
+    exactActivityFilterBtn.setActive(false)
+
     -- Reset Filters button — right-aligned in the filter bar, same visual style as dropdowns.
     local resetBtn = CreateFrame("Button", nil, parent)
     resetBtn:SetSize(90, 22)
