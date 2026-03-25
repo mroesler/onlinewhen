@@ -678,6 +678,13 @@ function TL.Build(parent)
             specFilterBtn.setChoices({ { label = "Any Spec", value = nil } }, "Any Spec")
             specFilterBtn.setActive(false)
         end
+        filterPrimaryActivity = nil
+        filterExactActivity   = nil
+        if primaryActivityFilterBtn then primaryActivityFilterBtn._fs:SetText(primaryActivityFilterBtn._default) end
+        if exactActivityFilterBtn then
+            exactActivityFilterBtn.setChoices({ { label = "Any Exact Activity", value = nil } }, "Any Exact Activity")
+            exactActivityFilterBtn.setActive(false)
+        end
         TL.Refresh()
     end)
 
