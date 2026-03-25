@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Activity System
-status: Ready to plan
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-24T23:48:25.231Z"
+status: Ready to execute
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-03-25T00:43:49.599Z"
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 10
+  completed_plans: 9
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Players can immediately see not just *when* someone is online but *what they plan to do* — enabling at-a-glance group formation.
-**Current focus:** Phase 03 — schedule-tab-ui
+**Current focus:** Phase 04 — player-list-column
 
 ## Current Position
 
-Phase: 4
-Plan: Not started
+Phase: 04 (player-list-column) — EXECUTING
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -53,6 +53,8 @@ Plan: Not started
 | Phase 02-database-protocol P03 | 5 | 2 tasks | 0 files |
 | Phase 03-schedule-tab-ui P01 | 64s | 2 tasks | 2 files |
 | Phase 03-schedule-tab-ui P02 | 51s | 2 tasks | 1 files |
+| Phase 04-player-list-column P01 | 2min | 2 tasks | 2 files |
+| Phase 04-player-list-column P02 | 1min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -78,6 +80,10 @@ Recent decisions affecting current work:
 - [Phase 03-schedule-tab-ui]: exactActivity declared local in onSave scope — available at SaveMyEntry call site without module-scope upvalue
 - [Phase 03-schedule-tab-ui]: TI.Populate replicates onChange show/hide logic — SetValue alone does not fire onChange handler
 - [Phase 03-schedule-tab-ui]: selectedActivity = nil in TI.Reset — ClearValue only clears widget state, not the module-scope upvalue
+- [Phase 04-player-list-column]: No WINDOW_H change in 04-01 — height expansion handled in Phase 3; only width needed for player list column
+- [Phase 04-player-list-column]: activity column at COL_X=420 COL_W=150; time shifted to x=576, actions shifted to x=828 to accommodate new column
+- [Phase 04-player-list-column]: activityExact uses SetAlpha(alpha) separate from SetTextColor(DIM) to allow isPast fade while keeping DIM base color — mirrors timeSecondary pattern
+- [Phase 04-player-list-column]: COL_W.activity - 4 width avoids right-edge clipping for activity FontStrings — consistent with COL_W.name - 6 pattern
 
 ### Key Implementation Notes
 
@@ -96,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T23:41:25.336Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-03-25T00:43:49.596Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None

@@ -87,9 +87,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: Increase `WINDOW_W` in `UI/Window.lua`; update `COL_X`/`COL_W` constants in `UI/TabPlayers.lua` to insert the Activity column after Spec while preserving existing column proportions
-- [ ] 04-02: Extend the row pool in `UI/TabPlayers.lua` — add `activity` FontString fields (primary line + exact line) to each row; wire them in `updateRows()`
-- [ ] 04-03: Add "Activity" column header button and extend `sortEntries()` with the `"activity"` sort case (exact activity label, fallback to primary activity label)
+- [x] 04-01-PLAN.md — Widen WINDOW_W to 950; update CONTENT_W, COL_X, and COL_W to insert Activity column after Spec
+- [x] 04-02-PLAN.md — Add activityPrimary and activityExact FontStrings to row pool; wire them in updateRows()
+- [ ] 04-03-PLAN.md — Add Activity column header button and activity sort case in sortEntries()
 
 ### Phase 5: Player List Filters
 **Goal**: Players can filter the list by primary and exact activity; the exact filter cascades from the primary selection and resets when Reset Filters is clicked
@@ -122,5 +122,5 @@ changes consolidated.
 | 1. Data Foundation | 2/2 | Complete | - |
 | 2. Database + Protocol | 3/3 | Complete | - |
 | 3. Schedule Tab UI | 2/2 | Complete   | 2026-03-24 |
-| 4. Player List Column | 0/3 | Not started | - |
+| 4. Player List Column | 2/3 | In Progress|  |
 | 5. Player List Filters | 0/3 | Not started | - |
