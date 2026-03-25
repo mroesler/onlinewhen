@@ -613,6 +613,28 @@ function TL.Build(parent)
         filterPrimaryActivity = val
         filterExactActivity = nil
         currentPage = 1
+        if exactActivityFilterBtn then
+            if val == nil then
+                -- "Any Activity" selected: reset exact to disabled
+                exactActivityFilterBtn.setChoices({ { label = "Any Exact Activity", value = nil } }, "Any Exact Activity")
+                exactActivityFilterBtn.setActive(false)
+            else
+                local subs = OW.ACTIVITY_SUBS[val]
+                if subs and #subs > 0 then
+                    -- Activity has sub-types: enable exact dropdown with sub-type choices
+                    local exactChoices = { { label = "Any Exact Activity", value = nil } }
+                    for _, sub in ipairs(subs) do
+                        exactChoices[#exactChoices + 1] = { label = sub, value = sub }
+                    end
+                    exactActivityFilterBtn.setChoices(exactChoices, "Any Exact Activity")
+                    exactActivityFilterBtn.setActive(true)
+                else
+                    -- Quest/Farm/Chill: no sub-types, keep exact disabled (per FILT-06)
+                    exactActivityFilterBtn.setChoices({ { label = "Any Exact Activity", value = nil } }, "Any Exact Activity")
+                    exactActivityFilterBtn.setActive(false)
+                end
+            end
+        end
         TL.Refresh()
     end)
     primaryActivityFilterBtn:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, filterBar2Y)
