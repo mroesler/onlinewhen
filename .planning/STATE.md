@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Activity System
-status: Milestone complete
+status: v1.2 milestone complete
 stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-03-25T01:33:54.157Z"
+last_updated: "2026-03-25T01:38:20.738Z"
 progress:
   total_phases: 5
   completed_phases: 5
@@ -16,10 +16,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-24)
+See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** Players can immediately see not just *when* someone is online but *what they plan to do* — enabling at-a-glance group formation.
-**Current focus:** Phase 05 — player-list-filters
+**Current focus:** Planning next milestone
 
 ## Current Position
 
