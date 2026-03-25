@@ -45,6 +45,10 @@ local statusFilterBtn = nil
 local levelFilterBtn  = nil
 local classFilterBtn  = nil
 local specFilterBtn   = nil  -- forward ref; set during Build, read by class filter onChange
+local filterPrimaryActivity = nil   -- activity label string, or nil
+local filterExactActivity   = nil   -- exact activity label string, or nil
+local primaryActivityFilterBtn = nil  -- forward ref; set during Build
+local exactActivityFilterBtn   = nil  -- forward ref; set during Build
 
 -- Colors for dark background
 local WHITE      = { 1.0,  1.0,  1.0,  1.0 }
