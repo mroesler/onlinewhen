@@ -223,7 +223,7 @@ local function tzItems()
 end
 
 local function activityItems()
-    local items = {}
+    local items = { { value = nil, label = "— Select —" } }
     for _, act in ipairs(OW.ACTIVITY_LIST) do
         items[#items+1] = { value = act.label, label = act.label }
     end
@@ -232,7 +232,7 @@ end
 
 local function exactItemsForActivity(activityLabel)
     local subs = OW.ACTIVITY_SUBS and OW.ACTIVITY_SUBS[activityLabel] or {}
-    local items = {}
+    local items = { { value = nil, label = "— Select —" } }
     for _, sub in ipairs(subs) do
         items[#items+1] = { value = sub, label = sub }
     end
