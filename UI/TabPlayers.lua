@@ -45,6 +45,10 @@ local statusFilterBtn = nil
 local levelFilterBtn  = nil
 local classFilterBtn  = nil
 local specFilterBtn   = nil  -- forward ref; set during Build, read by class filter onChange
+local filterPrimaryActivity = nil   -- activity label string, or nil
+local filterExactActivity   = nil   -- exact activity label string, or nil
+local primaryActivityFilterBtn = nil  -- forward ref; set during Build
+local exactActivityFilterBtn   = nil  -- forward ref; set during Build
 
 -- Colors for dark background
 local WHITE      = { 1.0,  1.0,  1.0,  1.0 }
@@ -468,6 +472,8 @@ function TL.Refresh()
             local sid = e.class and e.spec and OW.SPEC_ID[e.class] and OW.SPEC_ID[e.class][e.spec]
             if sid ~= filterSpec then ok = false end
         end
+        if ok and filterPrimaryActivity and e.primaryActivity ~= filterPrimaryActivity then ok = false end
+        if ok and filterExactActivity and e.exactActivity ~= filterExactActivity then ok = false end
         if ok then entries[#entries + 1] = e end
     end
 
@@ -518,11 +524,12 @@ end
 function TL.Build(parent)
     local L = OW.L
 
-    -- columnHeaderY: top of column headers, pushed down to make room for the filter bar
-    local columnHeaderY = -(FILTER_TOP_PAD + FILTER_H + FILTER_BOT_PAD)   -- = -44
+    -- columnHeaderY: top of column headers, pushed down to make room for two filter rows
+    local columnHeaderY = -(FILTER_TOP_PAD + FILTER_H + FILTER_BOT_PAD + FILTER_H + FILTER_BOT_PAD)   -- = -80
 
     -- ---- Filter bar ----
     local filterBarY = -(FILTER_TOP_PAD + math.floor((FILTER_H - 22) / 2))  -- vertically centre 22px buttons in bar = -11
+    local filterBar2Y = -(FILTER_TOP_PAD + FILTER_H + FILTER_BOT_PAD + math.floor((FILTER_H - 22) / 2))  -- row 2 vertical center = -47
 
     -- Filter order: Status | Level | Class | Spec                [Reset →]
     statusFilterBtn = makeDropdown(parent, 120, "Any Status", {
@@ -596,6 +603,50 @@ function TL.Build(parent)
     specFilterBtn:SetPoint("TOPLEFT", parent, "TOPLEFT", 428, filterBarY)
     specFilterBtn.setActive(false)
 
+    -- ---- Filter bar row 2: Activity filters ----
+    local primaryActivityChoices = { { label = "Any Activity", value = nil } }
+    for _, act in ipairs(OW.ACTIVITY_LIST) do
+        primaryActivityChoices[#primaryActivityChoices + 1] = { label = act.label, value = act.label }
+    end
+
+    primaryActivityFilterBtn = makeDropdown(parent, 180, "Any Activity", primaryActivityChoices, function(val)
+        filterPrimaryActivity = val
+        filterExactActivity = nil
+        currentPage = 1
+        if exactActivityFilterBtn then
+            if val == nil then
+                -- "Any Activity" selected: reset exact to disabled
+                exactActivityFilterBtn.setChoices({ { label = "Any Exact Activity", value = nil } }, "Any Exact Activity")
+                exactActivityFilterBtn.setActive(false)
+            else
+                local subs = OW.ACTIVITY_SUBS[val]
+                if subs and #subs > 0 then
+                    -- Activity has sub-types: enable exact dropdown with sub-type choices
+                    local exactChoices = { { label = "Any Exact Activity", value = nil } }
+                    for _, sub in ipairs(subs) do
+                        exactChoices[#exactChoices + 1] = { label = sub, value = sub }
+                    end
+                    exactActivityFilterBtn.setChoices(exactChoices, "Any Exact Activity")
+                    exactActivityFilterBtn.setActive(true)
+                else
+                    -- Quest/Farm/Chill: no sub-types, keep exact disabled (per FILT-06)
+                    exactActivityFilterBtn.setChoices({ { label = "Any Exact Activity", value = nil } }, "Any Exact Activity")
+                    exactActivityFilterBtn.setActive(false)
+                end
+            end
+        end
+        TL.Refresh()
+    end)
+    primaryActivityFilterBtn:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, filterBar2Y)
+
+    exactActivityFilterBtn = makeDropdown(parent, 220, "Any Exact Activity",
+        { { label = "Any Exact Activity", value = nil } },
+        function(val)
+            filterExactActivity = val ; currentPage = 1 ; TL.Refresh()
+        end)
+    exactActivityFilterBtn:SetPoint("TOPLEFT", parent, "TOPLEFT", 190, filterBar2Y)
+    exactActivityFilterBtn.setActive(false)
+
     -- Reset Filters button — right-aligned in the filter bar, same visual style as dropdowns.
     local resetBtn = CreateFrame("Button", nil, parent)
     resetBtn:SetSize(90, 22)
@@ -626,6 +677,13 @@ function TL.Build(parent)
         if specFilterBtn   then
             specFilterBtn.setChoices({ { label = "Any Spec", value = nil } }, "Any Spec")
             specFilterBtn.setActive(false)
+        end
+        filterPrimaryActivity = nil
+        filterExactActivity   = nil
+        if primaryActivityFilterBtn then primaryActivityFilterBtn._fs:SetText(primaryActivityFilterBtn._default) end
+        if exactActivityFilterBtn then
+            exactActivityFilterBtn.setChoices({ { label = "Any Exact Activity", value = nil } }, "Any Exact Activity")
+            exactActivityFilterBtn.setActive(false)
         end
         TL.Refresh()
     end)
