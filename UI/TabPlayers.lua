@@ -472,6 +472,8 @@ function TL.Refresh()
             local sid = e.class and e.spec and OW.SPEC_ID[e.class] and OW.SPEC_ID[e.class][e.spec]
             if sid ~= filterSpec then ok = false end
         end
+        if ok and filterPrimaryActivity and e.primaryActivity ~= filterPrimaryActivity then ok = false end
+        if ok and filterExactActivity and e.exactActivity ~= filterExactActivity then ok = false end
         if ok then entries[#entries + 1] = e end
     end
 
