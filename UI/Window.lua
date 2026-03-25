@@ -4,7 +4,7 @@ local addonName, OW = ...
 OW.UI = {}
 local UI = OW.UI
 
-local WINDOW_W  = 800
+local WINDOW_W  = 950
 local WINDOW_H  = 536
 local TAB_COUNT = 2
 local TAB_H     = 32   -- height of the integrated tab header strip
